@@ -18,5 +18,25 @@ vec3f Material::shade( Scene *scene, const ray& r, const isect& i ) const
     // You will need to call both distanceAttenuation() and shadowAttenuation()
     // somewhere in your code in order to compute shadows and light falloff.
 
-	return kd;
+	vec3f ret;
+
+	ret = ke + prod(ka,scene->getAmbient());
+
+	vec3f P;
+	P = r.at(i.t);
+
+	for (Scene::cliter j = scene->beginLights(); j != scene->endLights(); j++){
+		vec3f atten = (*j)->distanceAttenuation(P)*(*j)->shadowAttenuation(P);
+		vec3f V = (*j)->getDirection(P);
+		vec3f diffuse_term = kd*maximum(i.N*V,0);
+		vec3f R = (2 * (i.N*V)*i.N) - V;
+		vec3f specular_term = ks*(pow(maximum(R*V,0), shininess));
+
+		ret += prod(atten, diffuse_term + specular_term);
+	}
+
+	ret = ret.clamp();
+
+	return ret;
+
 }

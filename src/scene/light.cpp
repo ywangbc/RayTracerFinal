@@ -13,7 +13,19 @@ vec3f DirectionalLight::shadowAttenuation( const vec3f& P ) const
 {
     // YOUR CODE HERE:
     // You should implement shadow-handling code here.
-    return vec3f(1,1,1);
+	vec3f d = getDirection(P);
+	vec3f curP = P;
+	isect isecP;
+	vec3f ret(1, 1, 1);
+	ray r = ray(curP, d);
+	while (scene->intersect(r, isecP)){
+		if (isecP.getMaterial().kt.iszero())return vec3f(0, 0, 0);
+		ret = prod(ret, isecP.getMaterial().kt);
+		curP = r.at(isecP.t);
+		r = ray(curP, d);
+	}
+
+	return ret;
 }
 
 vec3f DirectionalLight::getColor( const vec3f& P ) const
@@ -30,11 +42,15 @@ vec3f DirectionalLight::getDirection( const vec3f& P ) const
 double PointLight::distanceAttenuation( const vec3f& P ) const
 {
 	// YOUR CODE HERE
-
 	// You'll need to modify this method to attenuate the intensity 
 	// of the light based on the distance between the source and the 
 	// point P.  For now, I assume no attenuation and just return 1.0
-	return 1.0;
+
+	double d = (position - P).length();
+	
+	double dA = 1.0/(d*d*quadratic_atten_coeff+d*linear_atten_coeff+const_atten_coeff);
+	if (dA > 1.0) dA = 1.0;
+	return dA;
 }
 
 vec3f PointLight::getColor( const vec3f& P ) const
@@ -53,5 +69,18 @@ vec3f PointLight::shadowAttenuation(const vec3f& P) const
 {
     // YOUR CODE HERE:
     // You should implement shadow-handling code here.
-    return vec3f(1,1,1);
+	vec3f d = getDirection(P);
+	vec3f curP = P;
+	isect isecP;
+	vec3f ret(1, 1, 1);
+	ray r = ray(curP, d);
+	while (scene->intersect(r, isecP)){
+		if (isecP.getMaterial().kt.iszero())return vec3f(0, 0, 0);
+		ret = prod(ret, isecP.getMaterial().kt);
+		curP = r.at(isecP.t);
+		r = ray(curP, d);
+	}
+
+	return ret;
+
 }

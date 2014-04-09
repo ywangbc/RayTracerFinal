@@ -262,6 +262,11 @@ public:
 	void add( Light* light )
 	{ lights.push_back( light ); }
 
+	void addAmbient(vec3f amb){
+		ambientLight += amb;
+		ambientLight = ambientLight.clamp();
+	}
+
 	bool intersect( const ray& r, isect& i ) const;
 	void initScene();
 
@@ -270,6 +275,9 @@ public:
         
 	Camera *getCamera() { return &camera; }
 
+	vec3f getAmbient() const {
+		return ambientLight;
+	}
 	
 
 private:
@@ -278,6 +286,7 @@ private:
 	list<Geometry*> boundedobjects;
     list<Light*> lights;
     Camera camera;
+	vec3f ambientLight;
 	
 	// Each object in the scene, provided that it has hasBoundingBoxCapability(),
 	// must fall within this bounding box.  Objects that don't have hasBoundingBoxCapability()

@@ -524,15 +524,33 @@ static void processObject( Obj *obj, Scene *scene, mmap& materials )
 		scene->add( new DirectionalLight( scene, 
 			tupleToVec( getField( child, "direction" ) ).normalize(),
 			tupleToVec( getColorField( child ) ) ) );
-	} else if( name == "point_light" ) {
-		if( child == NULL ) {
-			throw ParseError( "No info for point_light" );
+	}
+	else if (name == "point_light") {
+		if (child == NULL) {
+			throw ParseError("No info for point_light");
 		}
+		if (hasField(child, "constant_attenuation_coeff") && hasField(child, "linear_attenuation_coeff") && hasField(child, "quadratic_attenuation_coeff")){
+			scene->add(new PointLight(scene,
+				tupleToVec(getField(child, "position")),
+				tupleToVec(getColorField(child)),
+				getField(child, "constant_attenuation_coeff")->getScalar(),
+				getField(child, "linear_attenuation_coeff")->getScalar(),
+				getField(child, "quadratic_attenuation_coeff")->getScalar()));
+		}
+		else {
+		scene->add(new PointLight(scene,
+			tupleToVec(getField(child, "position")),
+			tupleToVec(getColorField(child))));
+		}
+	} 
+	else if (name == "ambient_light"){
+		if (child == NULL) {
+			throw ParseError("No info for ambient_light");
+		}
+		scene->addAmbient(tupleToVec(getColorField(child)));
 
-		scene->add( new PointLight( scene, 
-			tupleToVec( getField( child, "position" ) ),
-			tupleToVec( getColorField( child ) ) ) );
-	} else if( 	name == "sphere" ||
+	}
+	else if( 	name == "sphere" ||
 				name == "box" ||
 				name == "cylinder" ||
 				name == "cone" ||
