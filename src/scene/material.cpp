@@ -30,6 +30,7 @@ vec3f Material::shade( Scene *scene, const ray& r, const isect& i ) const
 		vec3f V = (*j)->getDirection(P);
 		vec3f diffuse_term = kd*maximum(i.N*V,0);
 		vec3f R = (2 * (i.N*V)*i.N) - V;
+		R = R.normalize();
 		vec3f specular_term = ks*(pow(maximum(R*V,0), shininess*128.0));
 
 		ret += prod(atten, diffuse_term + specular_term);
