@@ -34,6 +34,8 @@ vec3f RayTracer::traceRay( Scene *scene, const ray& r,
 		// this code gets the material for the surface that was intersected,
 		// and asks that material to provide a color for the ray.  
 
+
+
 		// This is a great place to insert code for recursive ray tracing.
 		// Instead of just returning the result of shade(), add some
 		// more steps: add in the contributions from reflected and refracted
