@@ -43,6 +43,8 @@ public:
 		: Light(scene, color), position(pos), const_atten_coeff(1.0), linear_atten_coeff(0.0), quadratic_atten_coeff(0.0) {}
 	PointLight(Scene *scene, const vec3f& pos, const vec3f& color, const double cac, const double lac, const double qac)
 		: Light(scene, color), position(pos), const_atten_coeff(cac), linear_atten_coeff(lac),quadratic_atten_coeff(qac) {}
+
+
 	virtual vec3f shadowAttenuation(const vec3f& P) const;
 	virtual double distanceAttenuation( const vec3f& P ) const;
 	virtual vec3f getColor( const vec3f& P ) const;
@@ -59,22 +61,24 @@ class SpotLight
 	: public Light
 {
 public:
-	SpotLight(Scene *scene, const vec3f& pos, const vec3f& color)
-		: Light(scene, color), position(pos), const_atten_coeff(1.0), linear_atten_coeff(0.0), quadratic_atten_coeff(0.0) {}
-	SpotLight(Scene *scene, const vec3f& pos, const vec3f& color, const double cac, const double lac, const double qac)
-		: Light(scene, color), position(pos), const_atten_coeff(cac), linear_atten_coeff(lac), quadratic_atten_coeff(qac) {}
+	SpotLight(Scene *scene, const vec3f& pos, const vec3f&dir, const vec3f& color, double rangeField)
+		: Light(scene, color), position(pos), castDir(dir), range(rangeField), const_atten_coeff(1.0), linear_atten_coeff(0.0), quadratic_atten_coeff(0.0) {}
+	SpotLight(Scene *scene, const vec3f& pos, const vec3f&dir, const vec3f& color, double rangeField, const double cac, const double lac, const double qac)
+		: Light(scene, color), position(pos), castDir(dir), range(rangeField), const_atten_coeff(cac), linear_atten_coeff(lac), quadratic_atten_coeff(qac) {}
 
 	virtual vec3f shadowAttenuation(const vec3f& P) const;
 	virtual double distanceAttenuation(const vec3f& P) const;
 	virtual vec3f getColor(const vec3f& P) const;
 	virtual vec3f getDirection(const vec3f& P) const;
+	
 
 private:
 	double const_atten_coeff, linear_atten_coeff, quadratic_atten_coeff;
 
 protected:
 	vec3f position;
-
+	vec3f castDir;
+	double range;
 };
 
 

@@ -127,6 +127,17 @@ vec3f SpotLight::shadowAttenuation(const vec3f& P) const
 		r = ray(curP, d);
 	}
 
+	double cosVal = -d.normalize()*castDir.normalize();
+	if (cosVal < 0)
+	{
+		cosVal = 0;
+	}
+
+	double strength = pow(cosVal, range);
+	vec3f effect = vec3f(strength, strength, strength);
+
+	ret = prod(ret, effect);
+
 	return ret;
 
 }
