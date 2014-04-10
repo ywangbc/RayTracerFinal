@@ -5,6 +5,7 @@
 
 #include "scene/scene.h"
 #include "scene/ray.h"
+#include <map>
 
 class RayTracer
 {
@@ -36,6 +37,8 @@ private:
 	int maxDepth;
 
 	bool m_bSceneLoaded;
+
+	std::map<int,Material> mediaHistory;
 };
 
 #endif // __RAYTRACER_H__
