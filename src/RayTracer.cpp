@@ -17,6 +17,14 @@ vec3f RayTracer::trace( Scene *scene, double x, double y )
 {
     ray r( vec3f(0,0,0), vec3f(0,0,0) );
     scene->getCamera()->rayThrough( x,y,r );
+	mediaHistory.clear();
+
+
+	if (x > 0.5&&y > 0.5){
+		int ttt = 1;
+
+	}
+
 	return traceRay( scene, r, vec3f(1.0,1.0,1.0), 0 ).clamp();
 }
 
@@ -51,9 +59,61 @@ vec3f RayTracer::traceRay( Scene *scene, const ray& r,
 		ray R = ray(conPoint, Rdir);
 		I += prod(i.getMaterial().kr,traceRay(scene, R, thresh, depth + 1));
 
-		//refraction
-		//not yet implemented
+		//if not opaque
+		if (!i.getMaterial().kt.iszero()){
 
+			bool TIR = false;
+
+			//refraction
+			ray T(conPoint, r.getDirection());//without refraction
+
+			bool toAdd = false, toErase = false;
+			//if not surface
+			if (i.obj->hasInterior()){
+				//calculate angle
+				//in or out
+				double indexA, indexB;
+				vec3f normal;
+				if (i.N*r.getDirection() > RAY_EPSILON){//out
+					if (mediaHistory.empty())indexA = 1.0;
+					else indexA = mediaHistory.rbegin()->second.index;
+
+					mediaHistory.erase(i.obj->getOrder());
+					if (mediaHistory.empty())indexB = 1.0;
+					else {
+						toAdd = true;
+						indexB = mediaHistory.rbegin()->second.index;
+					}
+					normal = -i.N;
+				}
+				else {//in
+					if (mediaHistory.empty())indexA = 1.0;
+					else indexA = mediaHistory.rbegin()->second.index;
+					
+					mediaHistory.insert(make_pair(i.obj->getOrder(),i.getMaterial()));
+					toErase = true;
+					indexB = mediaHistory.rbegin()->second.index;
+					normal = i.N;
+				}
+				double indexRatio = indexA / indexB;
+				double cdi = normal*-r.getDirection();
+				double sdi = 1 - cdi*cdi;
+				double sdt = sdi * indexRatio; //sin delta t
+				//TIR
+				if (sdt > 1.0 + RAY_EPSILON){
+					TIR = true;
+				}
+				else {
+					TIR = false;
+					double cdt = sqrt(1 - sdt*sdt);
+					vec3f Tdir = (indexRatio*cdi - cdt)*normal - indexRatio*-r.getDirection();
+					T = ray(conPoint, Tdir);
+				}
+			}
+			if(!TIR)I += prod(i.getMaterial().kt, traceRay(scene, T, thresh, depth + 1));
+			if (toAdd)mediaHistory.insert(make_pair(i.obj->getOrder(), i.getMaterial()));
+			if (toErase)mediaHistory.erase(i.obj->getOrder());
+		}
 		I = I.clamp();
 
 		return I;
@@ -67,7 +127,8 @@ vec3f RayTracer::traceRay( Scene *scene, const ray& r,
 	}
 }
 
-RayTracer::RayTracer()
+RayTracer::RayTracer():
+mediaHistory()
 {
 	buffer = NULL;
 	buffer_width = buffer_height = 256;

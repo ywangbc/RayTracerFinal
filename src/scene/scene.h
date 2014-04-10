@@ -144,7 +144,6 @@ public:
     // do not call directly - this should only be called by intersect()
 	virtual bool intersectLocal( const ray& r, isect& i ) const;
 
-
 	virtual bool hasBoundingBoxCapability() const;
 	const BoundingBox& getBoundingBox() const { return bounds; }
 	virtual void ComputeBoundingBox()
@@ -212,6 +211,9 @@ class SceneObject
 public:
 	virtual const Material& getMaterial() const = 0;
 	virtual void setMaterial( Material *m ) = 0;
+	virtual bool hasInterior() const = 0;
+	virtual void setOrder(int ord) = 0;
+	virtual int getOrder() const = 0;
 
 protected:
 	SceneObject( Scene *scene )
@@ -228,6 +230,9 @@ public:
 
 	virtual const Material& getMaterial() const { return *material; }
 	virtual void setMaterial( Material *m )	{ material = m; }
+	virtual bool hasInterior() const{ return true; }
+	virtual void setOrder(int ord){ order = ord; }
+	virtual int getOrder() const { return order; }
 
 protected:
 	MaterialSceneObject( Scene *scene, Material *mat ) 
@@ -236,6 +241,9 @@ protected:
 	//	: SceneObject( scene ), material( new Material ) {}
 
 	Material *material;
+
+	int order;
+
 };
 
 class Scene
@@ -255,7 +263,7 @@ public:
 
 public:
 	Scene() 
-		: transformRoot(), objects(), lights() {}
+		: transformRoot(), objects(), lights(),currentOrder(0) {}
 	virtual ~Scene();
 
 	void add( Geometry* obj )
@@ -277,8 +285,6 @@ public:
 		ambientLight += amb;
 		ambientLight = ambientLight.clamp();
 	}
-
-
 
 	bool intersect( const ray& r, isect& i ) const;
 	void initScene();
@@ -306,6 +312,8 @@ private:
 	// must fall within this bounding box.  Objects that don't have hasBoundingBoxCapability()
 	// are exempt from this requirement.
 	BoundingBox sceneBounds;
+
+	int currentOrder;
 };
 
 #endif // __SCENE_H__
