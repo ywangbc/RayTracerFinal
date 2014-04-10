@@ -244,6 +244,10 @@ public:
 	typedef list<Light*>::iterator 			liter;
 	typedef list<Light*>::const_iterator 	cliter;
 
+	typedef list<Light*>::iterator			spotliter;
+	typedef list<Light*>::const_iterator 	cspotliter;
+
+
 	typedef list<Geometry*>::iterator 		giter;
 	typedef list<Geometry*>::const_iterator cgiter;
 
@@ -262,10 +266,19 @@ public:
 	void add( Light* light )
 	{ lights.push_back( light ); }
 
+
+	//Add new spotLight
+	void addSpot(Light* light)
+	{
+		spotLights.push_back(light); 
+	}
+
 	void addAmbient(vec3f amb){
 		ambientLight += amb;
 		ambientLight = ambientLight.clamp();
 	}
+
+
 
 	bool intersect( const ray& r, isect& i ) const;
 	void initScene();
@@ -285,6 +298,7 @@ private:
 	list<Geometry*> nonboundedobjects;
 	list<Geometry*> boundedobjects;
     list<Light*> lights;
+	list<Light*> spotLights;
     Camera camera;
 	vec3f ambientLight;
 	

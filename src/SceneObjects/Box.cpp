@@ -43,6 +43,8 @@ bool Box::intersectLocal( const ray& r, isect& i ) const
 	vec3f Rp = r.getPosition();
 	vec3f Rd = r.getDirection();
 
+	
+
 	for (int face = 0; face < 3; face++)
 	{
 

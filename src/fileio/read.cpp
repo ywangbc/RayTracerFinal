@@ -518,6 +518,19 @@ static void processObject( Obj *obj, Scene *scene, mmap& materials )
 		throw ParseError( string( oss.str() ) );
 	}
 
+	if (name == "spot_light") {
+		if (child == NULL) {
+			throw ParseError("No info for spot_light");
+		}
+
+		scene->add(new SpotLight(scene,
+			tupleToVec(getField(child, "direction")).normalize(),
+			tupleToVec(getColorField(child)),
+			getField(child, "constant_attenuation_coeff")->getScalar(),
+			getField(child, "linear_attenuation_coeff")->getScalar(),
+			getField(child, "quadratic_attenuation_coeff")->getScalar()));
+	}
+
 	if( name == "directional_light" ) {
 		if( child == NULL ) {
 			throw ParseError( "No info for directional_light" );
