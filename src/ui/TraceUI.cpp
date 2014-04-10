@@ -107,21 +107,7 @@ void TraceUI::cb_depthSlides(Fl_Widget* o, void* v)
 	((TraceUI*)(o->user_data()))->updateDepth();
 }
 
-//Added by Ryan
-//To enable the spotlight function
 
-void TraceUI::cb_spotEnable(Fl_Widget* o, void* v)
-{
-	bool temp = ((TraceUI*)(o->user_data()))->m_nspotEnabled;
-	if (temp)
-	{
-		((TraceUI*)(o->user_data()))->m_nspotEnabled = false;
-	}
-	else
-	{
-		((TraceUI*)(o->user_data()))->m_nspotEnabled = true;
-	}
-}
 
 void TraceUI::cb_render(Fl_Widget* o, void* v)
 {
@@ -291,10 +277,6 @@ TraceUI::TraceUI() {
 		m_stopButton = new Fl_Button(240, 55, 70, 25, "&Stop");
 		m_stopButton->user_data((void*)(this));
 		m_stopButton->callback(cb_stop);
-
-		m_spotTick = new Fl_Check_Button(200, 90, 70, 25, "&SpotLight");
-		m_spotTick -> user_data((void*)this);
-		m_spotTick->callback(cb_spotEnable);
 
 		m_mainWindow->callback(cb_exit2);
 		m_mainWindow->when(FL_HIDE);

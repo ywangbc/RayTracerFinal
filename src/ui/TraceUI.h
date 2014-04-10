@@ -32,7 +32,7 @@ public:
 	Fl_Button*			m_renderButton;
 	Fl_Button*			m_stopButton;
 
-	Fl_Check_Button*	m_spotTick;
+	
 
 	TraceGLWindow*		m_traceGlWindow;
 
@@ -71,7 +71,7 @@ private:
 	static void cb_sizeSlides(Fl_Widget* o, void* v);
 	static void cb_depthSlides(Fl_Widget* o, void* v);
 
-	static void cb_spotEnable(Fl_Widget* o, void* v);
+	
 
 	static void cb_render(Fl_Widget* o, void* v);
 	static void cb_stop(Fl_Widget* o, void* v);
