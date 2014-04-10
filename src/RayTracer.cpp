@@ -120,12 +120,19 @@ vec3f RayTracer::traceRay( Scene *scene, const ray& r,
 		if (!useBackground)return vec3f(0.0, 0.0, 0.0);
 		else {
 			vec3f axis_x = scene->getCamera()->getU();
-			vec3f axis_y = scene->getCamera()->getV();
+			vec3f S = r.getDirection();
+			S -= (S*axis_x)*axis_x;
 			vec3f axis_z = scene->getCamera()->getLook();
-			double dis_x = r.getDirection()*axis_x;
-			double dis_y = r.getDirection()*axis_y;
-			double dis_z = r.getDirection()*axis_z;
-			return getBackgroundImage(dis_x / dis_z + 0.5, dis_y / dis_z + 0.5);
+			vec3f sz = (S*axis_z) *axis_z;
+			S -= sz;
+			vec3f axis_v = scene->getCamera()->getV();
+			vec3f axis_y = axis_x.cross(axis_z);
+			double dis_v = (S*axis_y);
+			S = r.getDirection() - dis_v * axis_v;
+			double dis_x = S * axis_x;
+			double dis_z = S * axis_z;
+			vec3f res = dis_x * axis_x + dis_v * axis_v + dis_z * axis_z;
+			return getBackgroundImage(dis_x / dis_z + 0.5, dis_v / dis_z + 0.5);
 		}
 		
 	}
