@@ -29,6 +29,9 @@ public:
 	Fl_Slider*			m_sizeSlider;
 	Fl_Slider*			m_depthSlider;
 
+	//Used to control the adption threshold
+	Fl_Slider*			m_threSlider;
+
 	Fl_Button*			m_renderButton;
 	Fl_Button*			m_stopButton;
 
@@ -43,6 +46,7 @@ public:
 	
 	int			getSize();
 	int			getDepth();
+	double		getThre();
 
 private:
 	RayTracer*	raytracer;
@@ -50,9 +54,12 @@ private:
 	int			m_nSize;
 	int			m_nDepth;
 
+	double		m_nThreshold;
+
 	bool		m_nspotEnabled;
 
 	void updateDepth();
+	void updateThre();
 
 // static class members
 	static Fl_Menu_Item menuitems[];
@@ -70,6 +77,8 @@ private:
 
 	static void cb_sizeSlides(Fl_Widget* o, void* v);
 	static void cb_depthSlides(Fl_Widget* o, void* v);
+
+	static void cb_threSlides(Fl_Widget* o, void* v);
 
 	
 

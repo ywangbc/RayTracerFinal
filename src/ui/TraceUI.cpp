@@ -107,6 +107,12 @@ void TraceUI::cb_depthSlides(Fl_Widget* o, void* v)
 	((TraceUI*)(o->user_data()))->updateDepth();
 }
 
+void TraceUI::cb_threSlides(Fl_Widget* o, void* v)
+{
+	((TraceUI*)(o->user_data()))->m_nThreshold = double(((Fl_Slider *)o)->value());
+	((TraceUI*)(o->user_data()))->updateThre();
+}
+
 
 
 void TraceUI::cb_render(Fl_Widget* o, void* v)
@@ -211,9 +217,16 @@ int TraceUI::getDepth()
 {
 	return m_nDepth;
 }
+double TraceUI::getThre()
+{
+	return m_nThreshold;
+}
 
 void TraceUI::updateDepth(){
 	raytracer->setDepth(getDepth());
+}
+void TraceUI::updateThre(){
+	raytracer->setThre(getThre());
 }
 
 // menu definition
@@ -237,6 +250,7 @@ TraceUI::TraceUI() {
 	// init.
 	m_nDepth = 0;
 	m_nSize = 150;
+	m_nThreshold = 1.0;
 	m_nspotEnabled = false;
 	m_mainWindow = new Fl_Window(100, 40, 320, 300, "Ray <Not Loaded>");
 		m_mainWindow->user_data((void*)(this));	// record self to be used by static callback functions
@@ -277,6 +291,19 @@ TraceUI::TraceUI() {
 		m_stopButton = new Fl_Button(240, 55, 70, 25, "&Stop");
 		m_stopButton->user_data((void*)(this));
 		m_stopButton->callback(cb_stop);
+
+		// install slider size
+		m_threSlider = new Fl_Value_Slider(10, 80, 170, 20, "Adaption threshold");
+		m_threSlider->user_data((void*)(this));	// record self to be used by static callback functions
+		m_threSlider->type(FL_HOR_NICE_SLIDER);
+		m_threSlider->labelfont(FL_COURIER);
+		m_threSlider->labelsize(12);
+		m_threSlider->minimum(0);
+		m_threSlider->maximum(1);
+		m_threSlider->step(0.01);
+		m_threSlider->value(m_nThreshold);
+		m_threSlider->align(FL_ALIGN_RIGHT);
+		m_threSlider->callback(cb_threSlides);
 
 		m_mainWindow->callback(cb_exit2);
 		m_mainWindow->when(FL_HIDE);

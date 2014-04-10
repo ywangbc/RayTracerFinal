@@ -25,6 +25,10 @@ public:
 	void setDepth(int dep){
 		maxDepth = dep;
 	}
+	void setThre(double threshold)
+	{
+		maxThresh = threshold;
+	}
 	bool loadScene( char* fn );
 	void loadBackground( char* fn );
 	vec3f getBackgroundImage(double x, double y);
