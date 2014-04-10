@@ -87,8 +87,19 @@ bool Box::intersectLocal( const ray& r, isect& i ) const
 		return false;
 	}
 
+
+
 	i.obj = this;
-	i.t = Tnear;
+
+	if (Tnear < RAY_EPSILON)
+	{
+		i.t = Tfar;
+	}
+	else
+	{
+		i.t = Tnear;
+	}
+	
 
 	vec3f isectP = r.at(Tnear);
 
