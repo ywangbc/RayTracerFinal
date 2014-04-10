@@ -1,0 +1,41 @@
+SBT-raytracer 1.0
+
+camera {
+	position = (-5,5,5);
+	viewdir = (5,-3,-5);
+	aspectratio = 1;
+	updir = (0,1,0);
+}
+
+spot_light {
+	direction = (5,-2,5);
+	colour = (1.0, 1.0, 1.0);
+	position = (-7, 4, -7);
+	range = 65;
+}
+
+
+
+
+
+translate(2, 3, 0,
+	scale(3,
+			box { 
+				material = { 
+					diffuse = (0.8,0.3,0.1);
+					specular = (0,0,0);
+				}
+		})
+)
+translate(2, -3.5, 0,
+	scale(10,
+			box { 
+				material = { 
+					diffuse = (0.3,0.8,0.1);
+					specular = (0,0,0);
+				}
+		})
+)
+
+
+
