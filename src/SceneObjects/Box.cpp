@@ -101,7 +101,7 @@ bool Box::intersectLocal( const ray& r, isect& i ) const
 	}
 	
 
-	vec3f isectP = r.at(Tnear);
+	vec3f isectP = r.at(i.t);
 
 	if (eq(isectP[0], -length))
 	{

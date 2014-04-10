@@ -48,10 +48,11 @@ vec3f RayTracer::traceRay( Scene *scene, const ray& r,
 		if (depth >= maxDepth)return I;
 
 		vec3f conPoint = r.at(i.t);
+		vec3f normal;
 		vec3f Rdir = 2 * (i.N*-r.getDirection()) * i.N - (-r.getDirection());
 		//reflection
 		ray R = ray(conPoint, Rdir);
-		I += prod(i.getMaterial().kr,traceRay(scene, R, thresh, depth + 1));
+		if(!i.getMaterial().kr.iszero())I += prod(i.getMaterial().kr,traceRay(scene, R, thresh, depth + 1));
 
 		//if not opaque
 		if (!i.getMaterial().kt.iszero()){
@@ -67,15 +68,14 @@ vec3f RayTracer::traceRay( Scene *scene, const ray& r,
 				//calculate angle
 				//in or out
 				double indexA, indexB;
-				vec3f normal;
 				if (i.N*r.getDirection() > RAY_EPSILON){//out
 					if (mediaHistory.empty())indexA = 1.0;
 					else indexA = mediaHistory.rbegin()->second.index;
 
 					mediaHistory.erase(i.obj->getOrder());
+					toAdd = true;
 					if (mediaHistory.empty())indexB = 1.0;
 					else {
-						toAdd = true;
 						indexB = mediaHistory.rbegin()->second.index;
 					}
 					normal = -i.N;
