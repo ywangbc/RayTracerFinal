@@ -26,7 +26,9 @@ public:
 		maxDepth = dep;
 	}
 	bool loadScene( char* fn );
-
+	void loadBackground( char* fn );
+	vec3f getBackgroundImage(double x, double y);
+	void clearBackground();
 	bool sceneLoaded();
 
 private:
@@ -35,6 +37,10 @@ private:
 	int bufferSize;
 	Scene *scene;
 	int maxDepth;
+	double maxThresh;
+	bool useBackground;
+	unsigned char *backgroundImage;
+	int m_bHeight, m_bWidth;
 
 	bool m_bSceneLoaded;
 

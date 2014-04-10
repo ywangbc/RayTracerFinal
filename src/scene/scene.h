@@ -263,7 +263,7 @@ public:
 
 public:
 	Scene() 
-		: transformRoot(), objects(), lights(),currentOrder(0) {}
+		: transformRoot(), objects(), lights(), currentOrder(0){}
 	virtual ~Scene();
 
 	void add( Geometry* obj )
@@ -302,6 +302,7 @@ public:
 		return ambientLight;
 	}
 	
+	
 
 private:
     list<Geometry*> objects;
@@ -311,6 +312,7 @@ private:
 	list<Light*> spotLights;
     Camera camera;
 	vec3f ambientLight;
+
 	
 	// Each object in the scene, provided that it has hasBoundingBoxCapability(),
 	// must fall within this bounding box.  Objects that don't have hasBoundingBoxCapability()

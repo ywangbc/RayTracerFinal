@@ -8,6 +8,7 @@
 #include "scene/ray.h"
 #include "fileio/read.h"
 #include "fileio/parse.h"
+#include "fileio/bitmap.h"
 
 // Trace a top-level ray through normalized window coordinates (x,y)
 // through the projection plane, and out into the scene.  All we do is
@@ -116,17 +117,28 @@ vec3f RayTracer::traceRay( Scene *scene, const ray& r,
 		// No intersection.  This ray travels to infinity, so we color
 		// it according to the background color, which in this (simple) case
 		// is just black.
-
-		return vec3f( 0.0, 0.0, 0.0 );
+		if (!useBackground)return vec3f(0.0, 0.0, 0.0);
+		else {
+			vec3f axis_x = scene->getCamera()->getU();
+			vec3f axis_y = scene->getCamera()->getV();
+			vec3f axis_z = scene->getCamera()->getLook();
+			double dis_x = r.getDirection()*axis_x;
+			double dis_y = r.getDirection()*axis_y;
+			double dis_z = r.getDirection()*axis_z;
+			return getBackgroundImage(dis_x / dis_z + 0.5, dis_y / dis_z + 0.5);
+		}
+		
 	}
 }
 
 RayTracer::RayTracer():
-mediaHistory()
+mediaHistory(),backgroundImage(NULL), useBackground(false)
 {
 	buffer = NULL;
 	buffer_width = buffer_height = 256;
 	scene = NULL;
+	maxDepth = 0;
+	maxThresh = 1.0;
 
 	m_bSceneLoaded = false;
 }
@@ -136,6 +148,7 @@ RayTracer::~RayTracer()
 {
 	delete [] buffer;
 	delete scene;
+	if (backgroundImage)delete[] backgroundImage;
 }
 
 void RayTracer::getBuffer( unsigned char *&buf, int &w, int &h )
@@ -185,6 +198,35 @@ bool RayTracer::loadScene( char* fn )
 
 	return true;
 }
+
+void RayTracer::loadBackground(char* fn)
+{
+	unsigned char* data = NULL;
+	data = readBMP(fn, m_bWidth, m_bHeight);
+	if (data){
+		if (backgroundImage)delete[] backgroundImage;
+		useBackground = true;
+		backgroundImage = data;
+	}
+}
+
+void RayTracer::clearBackground(){
+	if (backgroundImage)delete [] backgroundImage;
+	backgroundImage = NULL;
+	useBackground = false;
+	m_bHeight = m_bWidth = 0;
+}
+
+
+vec3f RayTracer::getBackgroundImage(double x, double y){
+	if (!useBackground)return vec3f(0, 0, 0);
+	int xGrid, yGrid;
+	xGrid = int(x*m_bWidth);
+	yGrid = int(y*m_bHeight);
+	if (xGrid<0 || xGrid>=m_bWidth || yGrid<0 || yGrid>=m_bHeight)return vec3f(0, 0, 0);
+	return vec3f(backgroundImage[(yGrid*m_bWidth + xGrid) * 3]/255.0, backgroundImage[(yGrid*m_bWidth + xGrid) * 3 + 1]/255.0, backgroundImage[(yGrid*m_bWidth + xGrid) * 3 + 2]/255.0);
+}
+
 
 void RayTracer::traceSetup( int w, int h )
 {
