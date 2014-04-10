@@ -286,6 +286,10 @@ public:
 		ambientLight = ambientLight.clamp();
 	}
 
+	void giveOrder(SceneObject* obj){
+		obj->setOrder(++currentOrder);
+	}
+
 	bool intersect( const ray& r, isect& i ) const;
 	void initScene();
 

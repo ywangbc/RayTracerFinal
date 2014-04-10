@@ -19,12 +19,6 @@ vec3f RayTracer::trace( Scene *scene, double x, double y )
     scene->getCamera()->rayThrough( x,y,r );
 	mediaHistory.clear();
 
-
-	if (x > 0.5&&y > 0.5){
-		int ttt = 1;
-
-	}
-
 	return traceRay( scene, r, vec3f(1.0,1.0,1.0), 0 ).clamp();
 }
 

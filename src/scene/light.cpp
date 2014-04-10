@@ -85,7 +85,7 @@ vec3f PointLight::shadowAttenuation(const vec3f& P) const
 
 }
 
-double PointLight::distanceAttenuation(const vec3f& P) const
+double SpotLight::distanceAttenuation(const vec3f& P) const
 {
 	// YOUR CODE HERE
 	// You'll need to modify this method to attenuate the intensity 
