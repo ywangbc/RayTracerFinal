@@ -90,6 +90,7 @@ void TraceUI::cb_sizeSlides(Fl_Widget* o, void* v)
 void TraceUI::cb_depthSlides(Fl_Widget* o, void* v)
 {
 	((TraceUI*)(o->user_data()))->m_nDepth=int( ((Fl_Slider *)o)->value() ) ;
+	((TraceUI*)(o->user_data()))->updateDepth();
 }
 
 void TraceUI::cb_render(Fl_Widget* o, void* v)
@@ -193,6 +194,10 @@ int TraceUI::getSize()
 int TraceUI::getDepth()
 {
 	return m_nDepth;
+}
+
+void TraceUI::updateDepth(){
+	raytracer->setDepth(getDepth());
 }
 
 // menu definition

@@ -21,7 +21,9 @@ public:
 	void traceSetup( int w, int h );
 	void traceLines( int start = 0, int stop = 10000000 );
 	void tracePixel( int i, int j );
-
+	void setDepth(int dep){
+		maxDepth = dep;
+	}
 	bool loadScene( char* fn );
 
 	bool sceneLoaded();
@@ -31,6 +33,7 @@ private:
 	int buffer_width, buffer_height;
 	int bufferSize;
 	Scene *scene;
+	int maxDepth;
 
 	bool m_bSceneLoaded;
 };

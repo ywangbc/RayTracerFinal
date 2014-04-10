@@ -20,7 +20,7 @@ vec3f Material::shade( Scene *scene, const ray& r, const isect& i ) const
 
 	vec3f ret;
 
-	ret = ke + prod(ka,scene->getAmbient());
+	ret = ke + prod(vec3f(1,1,1)-kt,prod(ka,scene->getAmbient()));
 
 	vec3f P;
 	P = r.at(i.t);
@@ -28,10 +28,10 @@ vec3f Material::shade( Scene *scene, const ray& r, const isect& i ) const
 	for (Scene::cliter j = scene->beginLights(); j != scene->endLights(); j++){
 		vec3f atten = (*j)->distanceAttenuation(P)*(*j)->shadowAttenuation(P);
 		vec3f V = (*j)->getDirection(P);
-		vec3f diffuse_term = kd*maximum(i.N*V,0);
+		vec3f diffuse_term = prod(kd*maximum(i.N*V,0),(vec3f(1,1,1)-kt));
 		vec3f R = (2 * (i.N*V)*i.N) - V;
 		R = R.normalize();
-		vec3f specular_term = ks*(pow(maximum(R*V,0), shininess*128.0));
+		vec3f specular_term = ks*(pow(maximum(R*-r.getDirection(),0), shininess*128.0));
 
 		ret += prod(atten, diffuse_term + specular_term);
 	}

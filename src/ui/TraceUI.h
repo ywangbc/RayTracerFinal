@@ -38,7 +38,7 @@ public:
 	void show();
 
 	void		setRayTracer(RayTracer *tracer);
-
+	
 	int			getSize();
 	int			getDepth();
 
@@ -47,6 +47,8 @@ private:
 
 	int			m_nSize;
 	int			m_nDepth;
+
+	void updateDepth();
 
 // static class members
 	static Fl_Menu_Item menuitems[];

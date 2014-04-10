@@ -42,7 +42,21 @@ vec3f RayTracer::traceRay( Scene *scene, const ray& r,
 		// rays.
 
 		const Material& m = i.getMaterial();
-		return m.shade(scene, r, i);
+		vec3f I = m.shade(scene, r, i);
+		if (depth >= maxDepth)return I;
+
+		vec3f conPoint = r.at(i.t);
+		vec3f Rdir = 2 * (i.N*-r.getDirection()) * i.N - (-r.getDirection());
+		//reflection
+		ray R = ray(conPoint, Rdir);
+		I += prod(i.getMaterial().kr,traceRay(scene, R, thresh, depth + 1));
+
+		//refraction
+		//not yet implemented
+
+		I = I.clamp();
+
+		return I;
 	
 	} else {
 		// No intersection.  This ray travels to infinity, so we color
