@@ -30,6 +30,8 @@ static bool hasField( Obj *obj, const string& name );
 static vec3f tupleToVec( Obj *obj );
 static void processGeometry( string name, Obj *child, Scene *scene,
 	const mmap& materials, TransformNode *transform );
+static void processCSG(string name, Obj *child, Scene *scene,
+	const mmap& materials, TransformNode *transform);
 static void processTrimesh( string name, Obj *child, Scene *scene,
                                      const mmap& materials, TransformNode *transform );
 static void processCamera( Obj *child, Scene *scene );
@@ -325,10 +327,197 @@ static void processGeometry( string name, Obj *child, Scene *scene,
 		} else if( name == "square" ) {
 			obj = new Square( scene, mat );
 		}
+		else if (name == "CSG"){
+			const tuple& tup = child->getTuple();
+			verifyTuple(tup, 3);
+			CSGTree ia, ib;
+			ia = processCSGGeometry(tup[0], scene, materials, transform);
+			ib = processCSGGeometry(tup[2], scene, materials, transform);
+			string str;
+			TYPE_RELATION re;
+			str = tup[1]->getString();
+			if (str == "AND")re = AND;
+			else if (str == "OR")re = OR;
+			else if (str == "MINUS")re = MINUS;
+			else throw ParseError(string("invalid CSG"));
+			ia.Merge(ib, re);
+			obj = new CSG(scene, mat, ia);
+		}
 
         obj->setTransform(transform);
 		scene->giveOrder(obj);
 		scene->add(obj);
+	}
+}
+
+
+static CSGTree processCSGGeometry(Obj *obj, Scene *scene,
+	const mmap& materials, TransformNode *transform)
+{
+	string name;
+	Obj *child;
+
+	if (obj->getTypeName() == "id") {
+		name = obj->getID();
+		child = NULL;
+	}
+	else if (obj->getTypeName() == "named") {
+		name = obj->getName();
+		child = obj->getChild();
+	}
+	else {
+		ostrstream oss;
+		oss << "Unknown input object ";
+		obj->printOn(oss);
+
+		throw ParseError(string(oss.str()));
+	}
+
+	return processCSGGeometry(name, child, scene, materials, transform);
+}
+
+
+static CSGTree processCSGGeometry(string name, Obj *child, Scene *scene,
+	const mmap& materials, TransformNode *transform)
+{
+	if (name == "translate") {
+		const tuple& tup = child->getTuple();
+		verifyTuple(tup, 4);
+		processGeometry(tup[3],
+			scene,
+			materials,
+			transform->createChild(mat4f::translate(vec3f(tup[0]->getScalar(),
+			tup[1]->getScalar(),
+			tup[2]->getScalar()))));
+	}
+	else if (name == "rotate") {
+		const tuple& tup = child->getTuple();
+		verifyTuple(tup, 5);
+		processGeometry(tup[4],
+			scene,
+			materials,
+			transform->createChild(mat4f::rotate(vec3f(tup[0]->getScalar(),
+			tup[1]->getScalar(),
+			tup[2]->getScalar()),
+			tup[3]->getScalar())));
+	}
+	else if (name == "scale") {
+		const tuple& tup = child->getTuple();
+		if (tup.size() == 2) {
+			double sc = tup[0]->getScalar();
+			processGeometry(tup[1],
+				scene,
+				materials,
+				transform->createChild(mat4f::scale(vec3f(sc, sc, sc))));
+		}
+		else {
+			verifyTuple(tup, 4);
+			processGeometry(tup[3],
+				scene,
+				materials,
+				transform->createChild(mat4f::scale(vec3f(tup[0]->getScalar(),
+				tup[1]->getScalar(),
+				tup[2]->getScalar()))));
+		}
+	}
+	else if (name == "transform") {
+		const tuple& tup = child->getTuple();
+		verifyTuple(tup, 5);
+
+		const tuple& l1 = tup[0]->getTuple();
+		const tuple& l2 = tup[1]->getTuple();
+		const tuple& l3 = tup[2]->getTuple();
+		const tuple& l4 = tup[3]->getTuple();
+		verifyTuple(l1, 4);
+		verifyTuple(l2, 4);
+		verifyTuple(l3, 4);
+		verifyTuple(l4, 4);
+
+		processGeometry(tup[4],
+			scene,
+			materials,
+			transform->createChild(mat4f(vec4f(l1[0]->getScalar(),
+			l1[1]->getScalar(),
+			l1[2]->getScalar(),
+			l1[3]->getScalar()),
+			vec4f(l2[0]->getScalar(),
+			l2[1]->getScalar(),
+			l2[2]->getScalar(),
+			l2[3]->getScalar()),
+			vec4f(l3[0]->getScalar(),
+			l3[1]->getScalar(),
+			l3[2]->getScalar(),
+			l3[3]->getScalar()),
+			vec4f(l4[0]->getScalar(),
+			l4[1]->getScalar(),
+			l4[2]->getScalar(),
+			l4[3]->getScalar()))));
+	}
+	else if (name == "trimesh" || name == "polymesh") { // 'polymesh' is for backwards compatibility
+		processTrimesh(name, child, scene, materials, transform);
+	}
+	else {
+		SceneObject *obj = NULL;
+		Material *mat;
+
+		//if( hasField( child, "material" ) )
+		mat = getMaterial(getField(child, "material"), materials);
+		//else
+		//    mat = new Material();
+
+		if (name == "sphere") {
+			obj = new Sphere(scene, mat);
+		}
+		else if (name == "box") {
+			obj = new Box(scene, mat);
+		}
+		else if (name == "cylinder") {
+			bool capped = true;
+			maybeExtractField(child, "capped", capped);
+			obj = new Cylinder(scene, mat, capped);
+		}
+		else if (name == "cone") {
+			double height = 1.0;
+			double bottom_radius = 1.0;
+			double top_radius = 0.0;
+			bool capped = true;
+
+			maybeExtractField(child, "height", height);
+			maybeExtractField(child, "bottom_radius", bottom_radius);
+			maybeExtractField(child, "top_radius", top_radius);
+			maybeExtractField(child, "capped", capped);
+
+			obj = new Cone(scene, mat, height, bottom_radius, top_radius, capped);
+		}
+		else if (name == "square") {
+			obj = new Square(scene, mat);
+		}
+		else if (name == "CSG"){
+			const tuple& tup = child->getTuple();
+			verifyTuple(tup, 3);
+			CSGTree ia, ib;
+			ia = processCSGGeometry(tup[0], scene, materials, transform);
+			ib = processCSGGeometry(tup[2], scene, materials, transform);
+			string str;
+			TYPE_RELATION re;
+			str = tup[1]->getString();
+			if (str == "AND")re = AND;
+			else if (str == "OR")re = OR;
+			else if (str == "MINUS")re = MINUS;
+			else throw ParseError(string("invalid CSG"));
+			ia.Merge(ib, re);
+			return ia;
+		}
+
+		obj->setTransform(transform);
+
+		CSGNode *nd = new CSGNode;
+		nd->isLeaf = true;
+		nd->item = obj;
+		CSGTree ret(nd);
+		scene->addCSGObject(obj);
+		scene->addCSGNode(nd);
+		return ret;
 	}
 }
 
@@ -591,20 +780,22 @@ static void processObject( Obj *obj, Scene *scene, mmap& materials )
 		scene->addAmbient(tupleToVec(getColorField(child)));
 
 	}
-	else if( 	name == "sphere" ||
-				name == "box" ||
-				name == "cylinder" ||
-				name == "cone" ||
-				name == "square" ||
-				name == "translate" ||
-				name == "rotate" ||
-				name == "scale" ||
-				name == "transform" ||
-                name == "trimesh" ||
-                name == "polymesh") { // polymesh is for backwards compatibility.
+	else if (name == "sphere" ||
+		name == "box" ||
+		name == "cylinder" ||
+		name == "cone" ||
+		name == "square" ||
+		name == "translate" ||
+		name == "rotate" ||
+		name == "scale" ||
+		name == "transform" ||
+		name == "trimesh" ||
+		name == "polymesh" ||
+		name == "CSG") { // polymesh is for backwards compatibility.
 		processGeometry( name, child, scene, materials, &scene->transformRoot);
 		//scene->add( geo );
-	} else if( name == "material" ) {
+	} 
+	else if (name == "material") {
 		processMaterial( child, &materials );
 	} else if( name == "camera" ) {
 		processCamera( child, scene );
