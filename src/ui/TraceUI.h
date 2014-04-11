@@ -13,6 +13,7 @@
 #include <FL/Fl_Value_Slider.H>
 #include <FL/Fl_Check_Button.H>
 #include <FL/Fl_Button.H>
+#include <FL/Fl_Choice.H>
 
 #include <FL/fl_file_chooser.H>		// FLTK file chooser
 
@@ -21,9 +22,12 @@
 enum
 {
 	NORMAL = 0,
-	SAMPLE = 1,
-	ADAPT = 2
+	SAMPLE,
+	ADAPT,
+	NUM_TRACE
 };
+
+
 
 class TraceUI {
 public:
@@ -46,7 +50,11 @@ public:
 
 	Fl_Check_Button*		m_accelBox;
 
+	static Fl_Menu_Item		aliasingMenu[NUM_TRACE + 1];
+
 	TraceGLWindow*		m_traceGlWindow;
+
+	Fl_Choice*			m_TraceChoice;
 
 	// member functions
 	void show();
@@ -82,6 +90,8 @@ private:
 	void updateAnti();
 	void updateAmbient();
 	void updateAccel();
+
+	static void setTracingMethod(int);
 
 // static class members
 	static Fl_Menu_Item menuitems[];

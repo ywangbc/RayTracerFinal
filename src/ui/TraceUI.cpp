@@ -222,9 +222,10 @@ void TraceUI::cb_render(Fl_Widget* o, void* v)
 	}
 }
 
+
 void TraceUI::cb_RaytraceMethodChoice(Fl_Widget* o, void* v)
 {
-	
+	((TraceUI*)(o->user_data()))->m_nRaytracingMethod = int(v);
 }
 
 void TraceUI::cb_stop(Fl_Widget* o, void* v)
@@ -306,6 +307,14 @@ Fl_Menu_Item TraceUI::menuitems[] = {
 	{ 0 }
 };
 
+//Brush direction menu definition
+Fl_Menu_Item TraceUI::aliasingMenu[NUM_TRACE + 1] = {
+	{ "Normal", FL_ALT + 's', (Fl_Callback *)TraceUI::cb_RaytraceMethodChoice, (void*)NORMAL },
+	{ "Sample", FL_ALT + 'g', (Fl_Callback *)TraceUI::cb_RaytraceMethodChoice, (void*)SAMPLE },
+	{ "Adapt", FL_ALT + 'b', (Fl_Callback *)TraceUI::cb_RaytraceMethodChoice, (void*)ADAPT },
+	{ 0 }
+};
+
 TraceUI::TraceUI() {
 	// init.
 	m_nDepth = 0;
@@ -370,7 +379,7 @@ TraceUI::TraceUI() {
 		m_threSlider->callback(cb_threSlides);
 
 		
-		m_antiSlider = new Fl_Value_Slider(10, 165, 170, 20, "Antialiasing depth");
+		m_antiSlider = new Fl_Value_Slider(10, 165, 170, 20, "AntiAlias GridNum");
 		m_antiSlider->user_data((void*)(this));	// record self to be used by static callback functions
 		m_antiSlider->type(FL_HOR_NICE_SLIDER);
 		m_antiSlider->labelfont(FL_COURIER);
@@ -398,6 +407,11 @@ TraceUI::TraceUI() {
 		m_accelBox = new Fl_Check_Button(140, 130, 20, 20, "Accelarate Shading");
 		m_accelBox->user_data((void*)(this));	// record self to be used by static callback functions
 		m_accelBox->callback(cb_accelBox);
+
+		m_TraceChoice = new Fl_Choice(110, 200, 160, 25, "&Stroke Direction");
+		m_TraceChoice->user_data((void*)(this));
+		m_TraceChoice->menu(aliasingMenu);
+		m_TraceChoice->callback(cb_RaytraceMethodChoice);
 
 		m_mainWindow->callback(cb_exit2);
 		m_mainWindow->when(FL_HIDE);

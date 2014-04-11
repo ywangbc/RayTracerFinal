@@ -331,7 +331,7 @@ bool checkDiff(unsigned char corners[][2][3], int size, unsigned char* avgOut)
 		avgOut[i] = avg[i];
 	}
 
-	int diff[3];
+	int diff[3] = {0,0,0};
 	for (int i = 0; i < size; i++)
 	{
 		for (int j = 0; j < 2; j++)
