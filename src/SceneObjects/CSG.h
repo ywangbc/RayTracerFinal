@@ -26,7 +26,7 @@ public:
 class CSGNode
 {
 public:
-	CSGNode() :lchild( NULL ), rchild(NULL), item(NULL), relation(AND), isLeaf(0){};
+	CSGNode() :lchild( NULL ), rchild(NULL), item(NULL), relation(AND), isLeaf(0){}
 	CSGNode *lchild, *rchild;
 	Geometry* item;
 	TYPE_RELATION relation;
@@ -36,27 +36,24 @@ public:
 class CSGTree{
 public:
 	CSGTree():root(NULL){}
-	CSGTree(Geometry* obj, CSGNode* ptr){
+	CSGTree(CSGNode* ptr){
 		root = ptr;
-		root->item = obj;
-		root->isLeaf = true;
 	}
 	CSGTree& Merge(const CSGTree& pB, int relation);
 	bool intersect(const ray& r, isect& i) const;
 private:
 	CSGNode* root;
-	Segments& intersectLocal(const ray& r) const;
+	Segments intersectLocal(const ray& r) const;
 };
 
 class CSG
 	: public MaterialSceneObject
 {
 public:
-	CSG(Scene *scene, Material *mat)
-		: MaterialSceneObject(scene, mat)
+	CSG(Scene *scene, Material *mat, CSGTree tr)
+		: MaterialSceneObject(scene, mat), tree(tr)
 	{
 	}
-
 	virtual bool intersectLocal(const ray& r, isect& i) const;
 	virtual bool hasBoundingBoxCapability() const { return true; }
 	virtual bool hasInterior() const{ return true; }

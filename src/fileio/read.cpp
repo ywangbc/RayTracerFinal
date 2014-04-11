@@ -341,6 +341,7 @@ static void processGeometry( string name, Obj *child, Scene *scene,
 			else if (str == "MINUS")re = MINUS;
 			else throw ParseError(string("invalid CSG"));
 			ia.Merge(ib, re);
+			obj = new CSG(scene, mat, ia);
 		}
 
         obj->setTransform(transform);
@@ -510,7 +511,13 @@ static CSGTree processCSGGeometry(string name, Obj *child, Scene *scene,
 
 		obj->setTransform(transform);
 
-		return scene->addCSGObject(obj);
+		CSGNode *nd = new CSGNode;
+		nd->isLeaf = true;
+		nd->item = obj;
+		CSGTree ret(nd);
+		scene->addCSGObject(obj);
+		scene->addCSGNode(nd);
+		return ret;
 	}
 }
 

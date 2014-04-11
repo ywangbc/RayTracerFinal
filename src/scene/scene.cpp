@@ -155,6 +155,14 @@ Scene::~Scene()
 		delete (*g);
 	}
 
+	for (g = CSGNodeArray.begin(); g != CSGNodeArray.end(); ++g) {
+		delete (*g);
+	}
+
+	for (g = CSGObjectArray.begin(); g != CSGObjectArray.end(); ++g) {
+		delete (*g);
+	}
+
 	for( l = lights.begin(); l != lights.end(); ++l ) {
 		delete (*l);
 	}

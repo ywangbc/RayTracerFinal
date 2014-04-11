@@ -288,11 +288,11 @@ public:
 	void add( Light* light )
 	{ lights.push_back( light ); }
 
-	CSGTree addCSGObject(Geometry * obj){
-		CSGNode nd;
+	void addCSGObject(Geometry* obj){
+		CSGObjectArray.push_back(obj);
+	}
+	void addCSGNode(CSGNode *nd){
 		CSGNodeArray.push_back(nd);
-		CSGTree temp(obj, &CSGNodeArray[CSGNodeArray.size() - 1]);
-		return temp;
 	}
 
 	//Add new spotLight
@@ -341,7 +341,8 @@ private:
 	vector<GeometryNodes> treeBounded;
     list<Light*> lights;
 	list<Light*> spotLights;
-	vector<CSGNode> CSGNodeArray;
+	list<Geometry*> CSGObjectArray;
+	list<CSGNode*> CSGNodeArray;
     Camera camera;
 	vec3f ambientLight;
 	vec3f baseAmbientLight;
