@@ -408,7 +408,7 @@ TraceUI::TraceUI() {
 		m_accelBox->user_data((void*)(this));	// record self to be used by static callback functions
 		m_accelBox->callback(cb_accelBox);
 
-		m_TraceChoice = new Fl_Choice(110, 200, 160, 25, "&Stroke Direction");
+		m_TraceChoice = new Fl_Choice(110, 200, 160, 25, "&Anti Aliasing");
 		m_TraceChoice->user_data((void*)(this));
 		m_TraceChoice->menu(aliasingMenu);
 		m_TraceChoice->callback(cb_RaytraceMethodChoice);

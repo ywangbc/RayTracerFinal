@@ -526,6 +526,10 @@ unsigned char minChar(unsigned char a, unsigned char b)
 	return a < b ? a : b;
 }
 
+double r2()
+{
+	return (double)rand() / (double)(RAND_MAX+1);
+}
 
 
 void RayTracer::tracePixelSample(int i, int j)
@@ -560,7 +564,10 @@ void RayTracer::tracePixelSample(int i, int j)
 	{
 		for (int j = 0; j < gridNum; j++,currY+=yStep)
 		{
-			colSum += trace(scene, currX, currY);
+			double xJitter = currX + r2()*xStep;
+			double yJitter = currY + r2()*yStep;
+
+			colSum += trace(scene, xJitter, yJitter);
 		}
 	}
 
