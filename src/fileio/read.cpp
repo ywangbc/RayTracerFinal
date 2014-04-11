@@ -552,22 +552,36 @@ static void processObject( Obj *obj, Scene *scene, mmap& materials )
 		if (child == NULL) {
 			throw ParseError("No info for point_light");
 		}
+		double cac, lac, qac;
 		if (hasField(child, "constant_attenuation_coeff") && hasField(child, "linear_attenuation_coeff") && hasField(child, "quadratic_attenuation_coeff")){
+			cac = getField(child, "constant_attenuation_coeff")->getScalar();
+			lac = getField(child, "linear_attenuation_coeff")->getScalar();
+			qac = getField(child, "quadratic_attenuation_coeff")->getScalar();
+		}
+		else {
+			cac = 1.0;
+			lac = qac = 0.0;
+		}
+		if (hasField(child, "flapMin") && hasField(child, "flapMax")){
 			scene->add(new SpotLight(scene,
 				tupleToVec(getField(child, "position")),
 				tupleToVec(getField(child, "direction")),
 				tupleToVec(getColorField(child)),
-				getField(child, "range")->getScalar(),
-				getField(child, "constant_attenuation_coeff")->getScalar(),
-				getField(child, "linear_attenuation_coeff")->getScalar(),
-				getField(child, "quadratic_attenuation_coeff")->getScalar()));
+				getField(child, "range")->getScalar(), tupleToVec(getField(child, "flapMin")), tupleToVec(getField(child, "flapMax")), cac, lac, qac));
+		}
+		else if (hasField(child, "cone")){
+			scene->add(new SpotLight(scene,
+				tupleToVec(getField(child, "position")),
+				tupleToVec(getField(child, "direction")),
+				tupleToVec(getColorField(child)),
+				getField(child, "range")->getScalar(), getField(child, "cone")->getScalar(), cac, lac, qac));
 		}
 		else {
 			scene->add(new SpotLight(scene,
 				tupleToVec(getField(child, "position")),
 				tupleToVec(getField(child, "direction")),
 				tupleToVec(getColorField(child)),
-				getField(child, "range")->getScalar()));
+				getField(child, "range")->getScalar(), cac, lac, qac));
 		}
 	}
 	else if (name == "ambient_light"){

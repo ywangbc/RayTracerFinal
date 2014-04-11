@@ -61,10 +61,13 @@ class SpotLight
 	: public Light
 {
 public:
-	SpotLight(Scene *scene, const vec3f& pos, const vec3f&dir, const vec3f& color, double rangeField)
-		: Light(scene, color), position(pos), castDir(dir), range(rangeField), const_atten_coeff(1.0), linear_atten_coeff(0.0), quadratic_atten_coeff(0.0) {}
+	
 	SpotLight(Scene *scene, const vec3f& pos, const vec3f&dir, const vec3f& color, double rangeField, const double cac, const double lac, const double qac)
-		: Light(scene, color), position(pos), castDir(dir), range(rangeField), const_atten_coeff(cac), linear_atten_coeff(lac), quadratic_atten_coeff(qac) {}
+		: Light(scene, color), position(pos), castDir(dir), range(rangeField), useFlap(false), useCone(false), const_atten_coeff(cac), linear_atten_coeff(lac), quadratic_atten_coeff(qac) {}
+	SpotLight(Scene *scene, const vec3f& pos, const vec3f&dir, const vec3f& color, double rangeField, vec3f fMin, vec3f fMax, const double cac, const double lac, const double qac)
+		: Light(scene, color), position(pos), castDir(dir), range(rangeField), useFlap(true), useCone(false), flapMin(fMin), flapMax(fMax), const_atten_coeff(cac), linear_atten_coeff(lac), quadratic_atten_coeff(qac) {}
+	SpotLight(Scene *scene, const vec3f& pos, const vec3f&dir, const vec3f& color, double rangeField, double cAng, const double cac, const double lac, const double qac)
+		: Light(scene, color), position(pos), castDir(dir), range(rangeField), useFlap(false), useCone(true), coneAngle(cAng), const_atten_coeff(cac), linear_atten_coeff(lac), quadratic_atten_coeff(qac) {}
 
 	virtual vec3f shadowAttenuation(const vec3f& P) const;
 	virtual double distanceAttenuation(const vec3f& P) const;
@@ -79,6 +82,11 @@ protected:
 	vec3f position;
 	vec3f castDir;
 	double range;
+	bool useFlap;
+	bool useCone;
+	vec3f flapMin;
+	vec3f flapMax;
+	double coneAngle;
 };
 
 

@@ -22,6 +22,11 @@ vec3f RayTracer::trace( Scene *scene, double x, double y )
     scene->getCamera()->rayThrough( x,y,r );
 	mediaHistory.clear();
 
+	if (x >= 0.5 && y >= 0.5){
+		int t = 1;
+
+	}
+
 	return traceRay( scene, r, vec3f(1.0,1.0,1.0), 0 ).clamp();
 }
 
@@ -32,7 +37,7 @@ vec3f RayTracer::traceRay( Scene *scene, const ray& r,
 {
 	isect i;
 
-	if( scene->intersect( r, i ) ) {
+	if( scene->intersectMode( r, i ) ) {
 		// YOUR CODE HERE
 
 		// An intersection occured!  We've got work to do.  For now,
@@ -49,13 +54,15 @@ vec3f RayTracer::traceRay( Scene *scene, const ray& r,
 		const Material& m = i.getMaterial();
 		vec3f I = m.shade(scene, r, i);
 		if (depth >= maxDepth)return I;
+		if (thresh.length() < maxThresh-RAY_EPSILON)return I;
 
 		vec3f conPoint = r.at(i.t);
 		vec3f normal;
 		vec3f Rdir = 2 * (i.N*-r.getDirection()) * i.N - (-r.getDirection());
 		//reflection
 		ray R = ray(conPoint, Rdir);
-		if(!i.getMaterial().kr.iszero())I += prod(i.getMaterial().kr,traceRay(scene, R, thresh, depth + 1));
+		vec3f newThres = prod(thresh, i.getMaterial().kr);
+		if (!i.getMaterial().kr.iszero())I += prod(i.getMaterial().kr, traceRay(scene, R, newThres, depth + 1));
 
 		//if not opaque
 		if (!i.getMaterial().kt.iszero()){
@@ -107,7 +114,8 @@ vec3f RayTracer::traceRay( Scene *scene, const ray& r,
 					T = ray(conPoint, Tdir);
 				}
 			}
-			if(!TIR)I += prod(i.getMaterial().kt, traceRay(scene, T, thresh, depth + 1));
+			newThres = prod(thresh, i.getMaterial().kt);
+			if(!TIR)I += prod(i.getMaterial().kt, traceRay(scene, T, newThres, depth + 1));
 			if (toAdd)mediaHistory.insert(make_pair(i.obj->getOrder(), i.getMaterial()));
 			if (toErase)mediaHistory.erase(i.obj->getOrder());
 		}
@@ -148,6 +156,8 @@ mediaHistory(),backgroundImage(NULL), useBackground(false)
 	scene = NULL;
 	maxDepth = 0;
 	maxThresh = 1.0;
+	useAccelShading = false;
+	ambient = 0.0;
 
 	m_bSceneLoaded = false;
 }
@@ -200,7 +210,7 @@ bool RayTracer::loadScene( char* fn )
 	bufferFilledSize = buffer_width * buffer_height;
 	buffer = new unsigned char[ bufferSize ];
 	cornerBuffer = new unsigned char[cornerBufferSize];
-	bufferFilled = new unsigned char[bufferFilledSize];
+	bufferFilled = new bool[bufferFilledSize];
 
 	
 	// separate objects into bounded and unbounded
@@ -209,6 +219,9 @@ bool RayTracer::loadScene( char* fn )
 	// Add any specialized scene loading code here
 	
 	m_bSceneLoaded = true;
+	scene->setAmbient(ambient); 
+	scene->setAccelMode(useAccelShading);
+
 
 	return true;
 }
@@ -278,7 +291,7 @@ void RayTracer::traceSetup( int w, int h )
 			cout << "bufferFilled is NULL!!!" << endl;
 		}
 		
-		bufferFilled = new unsigned char[bufferFilledSize];
+		bufferFilled = new bool[bufferFilledSize];
 
 	}
 	memset( buffer, 0, w*h*3 );
@@ -298,6 +311,46 @@ void RayTracer::traceLines( int start, int stop )
 	for( int j = start; j < stop; ++j )
 		for( int i = 0; i < buffer_width; ++i )
 			tracePixel(i,j);
+}
+bool checkDiff(unsigned char corners[][2][3], int size, unsigned char* avgOut)
+{
+	unsigned int sum[3] = { 0, 0, 0 };
+	for (int i = 0; i < size; i++)
+	{
+		for (int j = 0; j < 2; j++)
+		{
+			sum[0] += corners[i][j][0];
+			sum[1] += corners[i][j][1];
+			sum[2] += corners[i][j][2];
+		}
+	}
+	unsigned int avg[3];
+	for (int i = 0; i < 3; i++)
+	{
+		avg[i] = sum[i] / 4;
+		avgOut[i] = avg[i];
+	}
+
+	int diff[3];
+	for (int i = 0; i < size; i++)
+	{
+		for (int j = 0; j < 2; j++)
+		{
+			diff[0] += abs(int(corners[i][j][0]) - int(avg[0]));
+			diff[1] += abs(int(corners[i][j][1]) - int(avg[1]));
+			diff[2] += abs(int(corners[i][j][2]) - int(avg[2]));
+		}
+	}
+	int diffFinal = diff[0] + diff[1] + diff[2];
+	if (diffFinal < ADPTHRE)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+
 }
 
 void RayTracer::tracePixelAdapt(int i, int j)
@@ -430,7 +483,7 @@ vec3f RayTracer::qSubPix( double xMin, double yMin, double width, double height,
 	{
 		for (int h = 0; h < 2; h++)
 		{
-			double length = (corners[w][h] - cornerAvg).length;
+			double length = (corners[w][h] - cornerAvg).length();
 			diffSum += length;
 		}
 	}
@@ -472,46 +525,7 @@ unsigned char minChar(unsigned char a, unsigned char b)
 	return a < b ? a : b;
 }
 
-bool checkDiff(unsigned char corners[][2][3], int size, unsigned char* avgOut)
-{
-	unsigned int sum[3] = {0,0,0};
-	for (int i = 0; i < size; i++)
-	{
-		for (int j = 0; j < 2; j++)
-		{
-			sum[0] += corners[i][j][0];
-			sum[1] += corners[i][j][1];
-			sum[2] += corners[i][j][2];
-		}
-	}
-	unsigned int avg[3];
-	for (int i = 0; i < 3; i++)
-	{
-		avg[i] = sum[i] / 4;
-		avgOut[i] = avg[i];
-	}
 
-	int diff[3];
-	for (int i = 0; i < size; i++)
-	{
-		for (int j = 0; j < 2; j++)
-		{
-			diff[0] += abs(int(corners[i][j][0])-int(avg[0]));
-			diff[1] += abs(int(corners[i][j][1]) - int(avg[1]));
-			diff[2] += abs(int(corners[i][j][2]) - int(avg[2]));
-		}
-	}
-	int diffFinal = diff[0] + diff[1] + diff[2];
-	if (diffFinal < ADPTHRE)
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-
-}
 
 void RayTracer::tracePixelSample(int i, int j)
 {

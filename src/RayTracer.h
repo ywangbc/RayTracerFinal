@@ -46,6 +46,17 @@ public:
 		if (abs(a - b) < RAY_EPSILON) return true;
 		else return false;
 	}
+	
+	void setAmbient(double amb){
+		ambient = amb;
+		if (scene)scene->setAmbient(amb);
+	}
+	void setAccelMode(bool acl){
+		useAccelShading = acl;
+		if (scene)scene->setAccelMode(acl);
+	}
+	
+	
 	bool loadScene( char* fn );
 	void loadBackground( char* fn );
 	vec3f getBackgroundImage(double x, double y);
@@ -65,11 +76,13 @@ private:
 	int bufferFilledSize;
 	Scene *scene;
 	int maxDepth;
+	double ambient;
 	double maxThresh;
 	int maxAnti;
 	bool useBackground;
 	unsigned char *backgroundImage;
 	int m_bHeight, m_bWidth;
+	bool useAccelShading;
 
 	bool m_bSceneLoaded;
 
