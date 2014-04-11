@@ -17,6 +17,7 @@ using namespace std;
 #include "material.h"
 #include "camera.h"
 #include "../vecmath/vecmath.h"
+#include "../SceneObjects/CSG.h"
 
 class Light;
 class Scene;
@@ -287,6 +288,12 @@ public:
 	void add( Light* light )
 	{ lights.push_back( light ); }
 
+	CSGTree addCSGObject(Geometry * obj){
+		CSGNode nd;
+		CSGNodeArray.push_back(nd);
+		CSGTree temp(obj, &CSGNodeArray[CSGNodeArray.size() - 1]);
+		return temp;
+	}
 
 	//Add new spotLight
 	void addSpot(Light* light)
@@ -334,6 +341,7 @@ private:
 	vector<GeometryNodes> treeBounded;
     list<Light*> lights;
 	list<Light*> spotLights;
+	vector<CSGNode> CSGNodeArray;
     Camera camera;
 	vec3f ambientLight;
 	vec3f baseAmbientLight;
