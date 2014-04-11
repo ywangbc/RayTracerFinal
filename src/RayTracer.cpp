@@ -158,6 +158,7 @@ mediaHistory(),backgroundImage(NULL), useBackground(false)
 	maxThresh = 1.0;
 	useAccelShading = false;
 	ambient = 0.0;
+	maxAnti = 1;
 
 	m_bSceneLoaded = false;
 }
@@ -331,7 +332,7 @@ bool checkDiff(unsigned char corners[][2][3], int size, unsigned char* avgOut)
 		avgOut[i] = avg[i];
 	}
 
-	int diff[3];
+	int diff[3] = {0,0,0};
 	for (int i = 0; i < size; i++)
 	{
 		for (int j = 0; j < 2; j++)
@@ -529,21 +530,47 @@ unsigned char minChar(unsigned char a, unsigned char b)
 
 void RayTracer::tracePixelSample(int i, int j)
 {
-	vec3f col;
+	vec3f colSum = vec3f(0,0,0);
 
 	if (!scene)
 		return;
 
+	double gridNum = maxAnti;
 	double x = double(i) / double(buffer_width);
 	double y = double(j) / double(buffer_height);
+	double pixWidth = double(1) / double(buffer_width);
+	double pixHeight = double(1) / double(buffer_height);
+	double xStep = pixWidth / gridNum;
+	double yStep = pixHeight / gridNum;
 
-	col = trace(scene, x, y);
+	double xMin = x - pixWidth / 2.0;
+	if (xMin < RAY_EPSILON)
+	{
+		xMin = RAY_EPSILON;
+	}
+	double yMin = y - pixHeight / 2.0;
+	if (yMin < RAY_EPSILON)
+	{
+		yMin = RAY_EPSILON;
+	}
+	double currX = xMin;
+	double currY = yMin;
+
+	for (int i = 0; i < gridNum; i++,currX+=xStep)
+	{
+		for (int j = 0; j < gridNum; j++,currY+=yStep)
+		{
+			colSum += trace(scene, currX, currY);
+		}
+	}
+
+	vec3f colAvg = colSum / (gridNum*gridNum);
 
 	unsigned char *pixel = buffer + (i + j * buffer_width) * 3;
 
-	pixel[0] = (int)(255.0 * col[0]);
-	pixel[1] = (int)(255.0 * col[1]);
-	pixel[2] = (int)(255.0 * col[2]);
+	pixel[0] = (int)(255.0 * colAvg[0]);
+	pixel[1] = (int)(255.0 * colAvg[1]);
+	pixel[2] = (int)(255.0 * colAvg[2]);
 }
 
 void RayTracer::tracePixel( int i, int j )
