@@ -35,7 +35,7 @@ public:
 	Fl_Button*			m_renderButton;
 	Fl_Button*			m_stopButton;
 
-	
+	Fl_Check_Button*		m_accelBox;
 
 	TraceGLWindow*		m_traceGlWindow;
 
@@ -47,19 +47,24 @@ public:
 	int			getSize();
 	int			getDepth();
 	double		getThre();
+	double		getAmbient();
+	bool		getAccelMode();
 
 private:
 	RayTracer*	raytracer;
 
 	int			m_nSize;
 	int			m_nDepth;
+	double			m_nAmbient;
 
 	double		m_nThreshold;
 
-	bool		m_nspotEnabled;
+	bool		m_nAccelEnabled;
 
 	void updateDepth();
 	void updateThre();
+	void updateAmbient();
+	void updateAccel();
 
 // static class members
 	static Fl_Menu_Item menuitems[];
@@ -77,9 +82,9 @@ private:
 
 	static void cb_sizeSlides(Fl_Widget* o, void* v);
 	static void cb_depthSlides(Fl_Widget* o, void* v);
-
+	static void cb_ambientSlides(Fl_Widget* o, void* v);
 	static void cb_threSlides(Fl_Widget* o, void* v);
-
+	static void cb_accelBox(Fl_Widget* o, void* v);
 	
 
 	static void cb_render(Fl_Widget* o, void* v);

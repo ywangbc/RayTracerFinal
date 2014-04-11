@@ -107,10 +107,21 @@ void TraceUI::cb_depthSlides(Fl_Widget* o, void* v)
 	((TraceUI*)(o->user_data()))->updateDepth();
 }
 
+void TraceUI::cb_ambientSlides(Fl_Widget* o, void* v)
+{
+	((TraceUI*)(o->user_data()))->m_nAmbient = double(((Fl_Slider *)o)->value());
+	((TraceUI*)(o->user_data()))->updateAmbient();
+}
+
 void TraceUI::cb_threSlides(Fl_Widget* o, void* v)
 {
 	((TraceUI*)(o->user_data()))->m_nThreshold = double(((Fl_Slider *)o)->value());
 	((TraceUI*)(o->user_data()))->updateThre();
+}
+
+void TraceUI::cb_accelBox(Fl_Widget* o, void* v){
+	((TraceUI*)(o->user_data()))->m_nAccelEnabled = char(((Fl_Check_Button *)o)->value());
+	((TraceUI*)(o->user_data()))->updateAccel();
 }
 
 
@@ -125,7 +136,9 @@ void TraceUI::cb_render(Fl_Widget* o, void* v)
 		int width=pUI->getSize();
 		int	height = (int)(width / pUI->raytracer->aspectRatio() + 0.5);
 		pUI->m_traceGlWindow->resizeWindow( width, height );
-
+		((TraceUI*)(o->user_data()))->updateDepth();
+		((TraceUI*)(o->user_data()))->updateThre();
+		((TraceUI*)(o->user_data()))->updateAmbient();
 		pUI->m_traceGlWindow->show();
 
 		pUI->raytracer->traceSetup(width, height);
@@ -221,12 +234,25 @@ double TraceUI::getThre()
 {
 	return m_nThreshold;
 }
-
+double TraceUI::getAmbient()
+{
+	return m_nAmbient;
+}
+bool TraceUI::getAccelMode()
+{
+	return m_nAccelEnabled;
+}
 void TraceUI::updateDepth(){
 	raytracer->setDepth(getDepth());
 }
 void TraceUI::updateThre(){
 	raytracer->setThre(getThre());
+}
+void TraceUI::updateAmbient(){
+	raytracer->setAmbient(getAmbient());
+}
+void TraceUI::updateAccel(){
+	raytracer->setAccelMode(getAccelMode());
 }
 
 // menu definition
@@ -250,8 +276,9 @@ TraceUI::TraceUI() {
 	// init.
 	m_nDepth = 0;
 	m_nSize = 150;
-	m_nThreshold = 1.0;
-	m_nspotEnabled = false;
+	m_nThreshold = 0.0;
+	m_nAmbient = 0.0;
+	m_nAccelEnabled = false;
 	m_mainWindow = new Fl_Window(100, 40, 320, 300, "Ray <Not Loaded>");
 		m_mainWindow->user_data((void*)(this));	// record self to be used by static callback functions
 		// install menu bar
@@ -304,6 +331,23 @@ TraceUI::TraceUI() {
 		m_threSlider->value(m_nThreshold);
 		m_threSlider->align(FL_ALIGN_RIGHT);
 		m_threSlider->callback(cb_threSlides);
+
+		// install slider size
+		m_sizeSlider = new Fl_Value_Slider(10, 105, 180, 20, "Ambient light");
+		m_sizeSlider->user_data((void*)(this));	// record self to be used by static callback functions
+		m_sizeSlider->type(FL_HOR_NICE_SLIDER);
+		m_sizeSlider->labelfont(FL_COURIER);
+		m_sizeSlider->labelsize(12);
+		m_sizeSlider->minimum(0.0);
+		m_sizeSlider->maximum(1.0);
+		m_sizeSlider->step(0.01);
+		m_sizeSlider->value(m_nAmbient);
+		m_sizeSlider->align(FL_ALIGN_RIGHT);
+		m_sizeSlider->callback(cb_ambientSlides);
+
+		m_accelBox = new Fl_Check_Button(140, 130, 20, 20, "Accelarate Shading");
+		m_accelBox->user_data((void*)(this));	// record self to be used by static callback functions
+		m_accelBox->callback(cb_accelBox);
 
 		m_mainWindow->callback(cb_exit2);
 		m_mainWindow->when(FL_HIDE);

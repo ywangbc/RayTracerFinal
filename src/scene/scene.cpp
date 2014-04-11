@@ -3,6 +3,7 @@
 #include "scene.h"
 #include "light.h"
 #include "../ui/TraceUI.h"
+#include <queue>
 extern TraceUI* traceUI;
 
 void BoundingBox::operator=(const BoundingBox& target)
@@ -73,6 +74,28 @@ bool BoundingBox::intersect(const ray& r, double& tMin, double& tMax) const
 	return true; // it made it past all 3 axes.
 }
 
+BoundingBox BoundingBox::plus(const BoundingBox& other) const {
+	BoundingBox ret;
+	ret = *this;
+	for (int i = 0; i < 3; i++){
+		ret.min[i] = min(ret.min[i], other.min[i]);
+		ret.max[i] = max(ret.max[i], other.max[i]);
+	}
+	return ret;
+}
+
+bool BoundingBox::operator<(const BoundingBox& other) const{
+
+	for (int i = 0; i < 3; i++){
+		if (min[i] + RAY_EPSILON < other.min[i])return true;
+		else if (min[i]>other.min[i] + RAY_EPSILON)return false;
+	}
+	for (int i = 0; i < 3; i++){
+		if (max[i] + RAY_EPSILON < other.max[i])return true;
+		else if (max[i]>other.max[i] + RAY_EPSILON)return false;
+	}
+	return false;
+}
 
 bool Geometry::intersect(const ray&r, isect&i) const
 {
@@ -128,7 +151,7 @@ Scene::~Scene()
 		delete (*g);
 	}
 
-	for( g = nonboundedobjects.begin(); g != boundedobjects.end(); ++g ) {
+	for( g = nonboundedobjects.begin(); g != nonboundedobjects.end(); ++g ) {
 		delete (*g);
 	}
 
@@ -171,6 +194,70 @@ bool Scene::intersect( const ray& r, isect& i ) const
 	return have_one;
 }
 
+bool Scene::intersectMode(const ray& r, isect& i) const{
+	
+	if (useAccelShading)return intersectAccel(r, i);
+	else return intersect(r, i);
+}
+
+// Get any intersection with an object.  Return information about the 
+// intersection through the reference parameter.
+bool Scene::intersectAccel(const ray& r, isect& i) const
+{
+	typedef list<Geometry*>::const_iterator iter;
+	iter j;
+
+	isect cur;
+	bool have_one = false;
+
+	// try the non-bounded objects
+	for (j = nonboundedobjects.begin(); j != nonboundedobjects.end(); ++j) {
+		if ((*j)->intersect(r, cur)) {
+			if (!have_one || (cur.t < i.t)) {
+				i = cur;
+				have_one = true;
+			}
+		}
+	}
+
+	// try the bounded objects
+	deque<int> geoQue;
+	geoQue.push_back(treeBounded.size()-1);
+	double tMin=0.0, tMax=0.0;
+	while (!geoQue.empty()){
+		int temp;
+		temp = geoQue.front();
+		geoQue.pop_front();
+		if (treeBounded[temp].item.intersect(r, tMin, tMax)){
+			if (treeBounded[temp].child){
+				if (treeBounded[temp].child->intersect(r, cur)) {
+					if (!have_one || (cur.t < i.t)) {
+						i = cur;
+						have_one = true;
+					}
+				}
+			}
+			else {
+				if (treeBounded[temp].lchild>=0){
+					geoQue.push_back(treeBounded[temp].lchild);
+				}
+				if (treeBounded[temp].rchild>=0){
+					geoQue.push_back(treeBounded[temp].rchild);
+				}
+			}
+		}
+	}
+
+	return have_one;
+}
+
+bool cmp(const Geometry* a, const Geometry* b){
+	BoundingBox x, y;
+	x = a->getBoundingBox();
+	y = b->getBoundingBox();
+	return x < y;
+}
+
 void Scene::initScene()
 {
 	bool first_boundedobject = true;
@@ -182,6 +269,7 @@ void Scene::initScene()
 		if( (*j)->hasBoundingBoxCapability() )
 		{
 			boundedobjects.push_back(*j);
+
 
 			// widen the scene's bounding box, if necessary
 			if (first_boundedobject) {
@@ -197,5 +285,30 @@ void Scene::initScene()
 		}
 		else
 			nonboundedobjects.push_back(*j);
+	}
+	deque<int> geoQue;
+	boundedobjects.sort(cmp);
+	for (iter j = boundedobjects.begin(); j != boundedobjects.end(); j++){
+		//construct tree
+		GeometryNodes temp;
+		temp.item = (*j)->getBoundingBox();
+		temp.child = (*j);
+		treeBounded.push_back(temp);
+		geoQue.push_back(treeBounded.size()-1);
+	}
+	while (!geoQue.empty()){
+		int ltemp, rtemp;
+		GeometryNodes temp;
+		ltemp = geoQue.front();
+		geoQue.pop_front();
+		if (!geoQue.empty() ){
+			rtemp = geoQue.front();
+			geoQue.pop_front();
+			temp.lchild = ltemp;
+			temp.rchild = rtemp;
+			temp.item = treeBounded[ltemp].item.plus(treeBounded[rtemp].item);
+			treeBounded.push_back(temp);
+			geoQue.push_back(treeBounded.size()-1);
+		}
 	}
 }

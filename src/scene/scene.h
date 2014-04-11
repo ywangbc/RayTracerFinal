@@ -8,6 +8,7 @@
 #define __SCENE_H__
 
 #include <list>
+#include<vector>
 #include <algorithm>
 
 using namespace std;
@@ -52,6 +53,9 @@ public:
 	// closest to the origin in tMin and the "t" value of the far intersection
 	// in tMax and return true, else return false.
 	bool intersect(const ray& r, double& tMin, double& tMax) const;
+
+	BoundingBox plus(const BoundingBox& other) const;
+	bool operator<(const BoundingBox& other) const;
 };
 
 class TransformNode
@@ -146,6 +150,7 @@ public:
 
 	virtual bool hasBoundingBoxCapability() const;
 	const BoundingBox& getBoundingBox() const { return bounds; }
+
 	virtual void ComputeBoundingBox()
     {
         // take the object's local bounding box, transform all 8 points on it,
@@ -246,6 +251,14 @@ protected:
 
 };
 
+class GeometryNodes{
+public:
+	BoundingBox item;
+	int lchild, rchild;
+	Geometry* child;
+	GeometryNodes(){ lchild = rchild = -1; child = NULL; }
+};
+
 class Scene
 {
 public:
@@ -263,7 +276,7 @@ public:
 
 public:
 	Scene() 
-		: transformRoot(), objects(), lights(), currentOrder(0){}
+		: transformRoot(), objects(), lights(), currentOrder(0), ambientLight(vec3f(0, 0, 0)), baseAmbientLight(vec3f(0, 0, 0)), useAccelShading(false){}
 	virtual ~Scene();
 
 	void add( Geometry* obj )
@@ -285,12 +298,22 @@ public:
 		ambientLight += amb;
 		ambientLight = ambientLight.clamp();
 	}
+	void setAmbient(double amb)
+	{
+		baseAmbientLight = vec3f(amb,amb,amb).clamp();
+	}
+	void setAccelMode(bool acl)
+	{
+		useAccelShading = acl;
+	}
 
 	void giveOrder(SceneObject* obj){
 		obj->setOrder(++currentOrder);
 	}
 
 	bool intersect( const ray& r, isect& i ) const;
+	bool intersectAccel(const ray& r, isect& i) const;	
+	bool intersectMode(const ray& r, isect& i) const;
 	void initScene();
 
 	list<Light*>::const_iterator beginLights() const { return lights.begin(); }
@@ -299,7 +322,7 @@ public:
 	Camera *getCamera() { return &camera; }
 
 	vec3f getAmbient() const {
-		return ambientLight;
+		return (ambientLight + baseAmbientLight).clamp();
 	}
 	
 	
@@ -308,10 +331,13 @@ private:
     list<Geometry*> objects;
 	list<Geometry*> nonboundedobjects;
 	list<Geometry*> boundedobjects;
+	vector<GeometryNodes> treeBounded;
     list<Light*> lights;
 	list<Light*> spotLights;
     Camera camera;
 	vec3f ambientLight;
+	vec3f baseAmbientLight;
+	bool useAccelShading;
 
 	
 	// Each object in the scene, provided that it has hasBoundingBoxCapability(),

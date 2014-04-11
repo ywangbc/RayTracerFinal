@@ -18,7 +18,7 @@ vec3f DirectionalLight::shadowAttenuation( const vec3f& P ) const
 	isect isecP;
 	vec3f ret = getColor(P);
 	ray r = ray(curP, d);
-	while (scene->intersect(r, isecP)){
+	while (scene->intersectMode(r, isecP)){
 		if (isecP.getMaterial().kt.iszero())return vec3f(0, 0, 0);
 		ret = prod(ret, isecP.getMaterial().kt);
 		curP = r.at(isecP.t);
@@ -74,7 +74,7 @@ vec3f PointLight::shadowAttenuation(const vec3f& P) const
 	isect isecP;
 	vec3f ret = getColor(P);
 	ray r = ray(curP, d);
-	while (scene->intersect(r, isecP)){
+	while (scene->intersectMode(r, isecP)){
 		if (isecP.getMaterial().kt.iszero())return vec3f(0, 0, 0);
 		ret = prod(ret, isecP.getMaterial().kt);
 		curP = r.at(isecP.t);
@@ -120,7 +120,7 @@ vec3f SpotLight::shadowAttenuation(const vec3f& P) const
 	isect isecP;
 	vec3f ret = getColor(P);
 	ray r = ray(curP, d);
-	while (scene->intersect(r, isecP)){
+	while (scene->intersectMode(r, isecP)){
 		if (isecP.getMaterial().kt.iszero())return vec3f(0, 0, 0);
 		ret = prod(ret, isecP.getMaterial().kt);
 		curP = r.at(isecP.t);
@@ -131,6 +131,16 @@ vec3f SpotLight::shadowAttenuation(const vec3f& P) const
 	if (cosVal < 0)
 	{
 		cosVal = 0;
+	}
+
+	if (useFlap){
+		for (int i = 0; i < 3; i++){
+			if (P[i]>flapMax[i] + RAY_EPSILON || P[i] < flapMin[i] - RAY_EPSILON)return vec3f(0, 0, 0);
+		}
+	}
+
+	if (useCone){
+		if (cosVal < cos(coneAngle) - RAY_EPSILON)return vec3f(0, 0, 0);
 	}
 
 	double strength = pow(cosVal, range);
