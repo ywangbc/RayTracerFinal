@@ -155,8 +155,9 @@ Scene::~Scene()
 		delete (*g);
 	}
 
-	for (g = CSGNodeArray.begin(); g != CSGNodeArray.end(); ++g) {
-		delete (*g);
+	list<CSGNode*>::iterator k;
+	for (k = CSGNodeArray.begin(); k != CSGNodeArray.end(); ++k) {
+		delete (*k);
 	}
 
 	for (g = CSGObjectArray.begin(); g != CSGObjectArray.end(); ++g) {

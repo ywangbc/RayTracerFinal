@@ -17,10 +17,11 @@ using namespace std;
 #include "material.h"
 #include "camera.h"
 #include "../vecmath/vecmath.h"
-#include "../SceneObjects/CSG.h"
 
 class Light;
 class Scene;
+
+extern class CSGNode;
 
 class SceneElement
 {

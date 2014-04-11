@@ -10,12 +10,26 @@ Segments& Segments::Merge(const Segments& another, int relation){
 	return *this;
 }
 
-CSGTree& CSGTree::Merge(const CSGTree& pB, int relation){
+CSGTree& CSGTree::Merge(const CSGTree& pB, TYPE_RELATION rel){
+	CSGNode temp;
+	temp.lchild = root;
+	temp.rchild = pB.root;
+	temp.isLeaf = false;
+	temp.relation = rel;
 	return *this;
 }
 
+SegmentPoint Segments::firstPositive(){
+	vector<SegmentPoint>::iterator j;
+	for (j = points.begin(); j != points.end(); j++){
+
+	}
+	return *j;
+}
+
 bool CSGTree::intersect(const ray& r, isect& i) const{
-	return false;
+	Segments inters = intersectLocal(r);
+	return true;
 }
 
 Segments CSGTree::intersectLocal(const ray& r) const{

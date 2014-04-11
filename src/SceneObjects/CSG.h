@@ -21,12 +21,15 @@ private:
 	vector<SegmentPoint> points;
 public:
 	Segments& Merge(const Segments& another, int relation);
+	SegmentPoint firstPositive();
 };
 
 class CSGNode
 {
 public:
-	CSGNode() :lchild( NULL ), rchild(NULL), item(NULL), relation(AND), isLeaf(0){}
+	CSGNode() 
+		:lchild( NULL ), rchild(NULL), item(NULL), relation(AND), isLeaf(0){
+	}
 	CSGNode *lchild, *rchild;
 	Geometry* item;
 	TYPE_RELATION relation;
@@ -39,8 +42,9 @@ public:
 	CSGTree(CSGNode* ptr){
 		root = ptr;
 	}
-	CSGTree& Merge(const CSGTree& pB, int relation);
+	CSGTree& Merge(const CSGTree& pB, TYPE_RELATION relation);
 	bool intersect(const ray& r, isect& i) const;
+	CSGNode* getRoot(){ return root; }
 private:
 	CSGNode* root;
 	Segments intersectLocal(const ray& r) const;
