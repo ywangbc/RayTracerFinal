@@ -10,6 +10,8 @@
 #include "fileio/parse.h"
 #include "fileio/bitmap.h"
 
+
+
 // Trace a top-level ray through normalized window coordinates (x,y)
 // through the projection plane, and out into the scene.  All we do is
 // enter the main ray-tracing method, getting things started by plugging
@@ -194,7 +196,12 @@ bool RayTracer::loadScene( char* fn )
 	buffer_height = (int)(buffer_width / scene->getCamera()->getAspectRatio() + 0.5);
 
 	bufferSize = buffer_width * buffer_height * 3;
+	cornerBufferSize = (buffer_width + 1) * (buffer_height + 1) * 3;
+	bufferFilledSize = buffer_width * buffer_height;
 	buffer = new unsigned char[ bufferSize ];
+	cornerBuffer = new unsigned char[cornerBufferSize];
+	bufferFilled = new unsigned char[bufferFilledSize];
+
 	
 	// separate objects into bounded and unbounded
 	scene->initScene();
@@ -242,11 +249,41 @@ void RayTracer::traceSetup( int w, int h )
 		buffer_width = w;
 		buffer_height = h;
 
+		//bufferFilledSize = buffer_width * buffer_height;
 		bufferSize = buffer_width * buffer_height * 3;
 		delete [] buffer;
 		buffer = new unsigned char[ bufferSize ];
+
+
+		cornerBufferSize = (buffer_width + 1) * (buffer_height + 1) * 3;
+		if (cornerBuffer != NULL)
+		{
+			delete[] cornerBuffer;
+		}
+		else
+		{
+			cout << "cornerBuffer is NULL!!!" << endl;
+		}
+		
+		cornerBuffer = new unsigned char[cornerBufferSize];
+
+
+		bufferFilledSize = (buffer_width+1) * (buffer_height+1);
+		if (bufferFilled != NULL)
+		{
+			delete[] bufferFilled;
+		}
+		else
+		{
+			cout << "bufferFilled is NULL!!!" << endl;
+		}
+		
+		bufferFilled = new unsigned char[bufferFilledSize];
+
 	}
 	memset( buffer, 0, w*h*3 );
+	memset(cornerBuffer, 0, (w + 1)*(h + 1) * 3);
+	memset(bufferFilled, 0, (w + 1)*(h + 1));
 }
 
 void RayTracer::traceLines( int start, int stop )
@@ -261,6 +298,238 @@ void RayTracer::traceLines( int start, int stop )
 	for( int j = start; j < stop; ++j )
 		for( int i = 0; i < buffer_width; ++i )
 			tracePixel(i,j);
+}
+
+void RayTracer::tracePixelAdapt(int i, int j)
+{
+	vec3f col;
+
+	if (!scene)
+		return;
+
+	double x = double(i) / double(buffer_width);
+	double y = double(j) / double(buffer_height);
+
+	double pixWidth = 1.0 / double (buffer_width);
+	double pixHeight = 1.0 / double (buffer_height);
+
+	double xMin = x - pixWidth/2.0;
+	//In case negative values
+	if (xMin < RAY_EPSILON)
+	{
+		xMin = RAY_EPSILON;
+	}
+	double xMax = x + pixWidth / 2.0;
+	double yMin = y - pixHeight / 2.0;
+	if (yMin < RAY_EPSILON)
+	{
+		yMin = RAY_EPSILON;
+	}
+	double yMax = y + pixHeight / 2.0;
+
+	double xVals[2] = { xMin, xMax };
+	double yVals[2] = { yMin, yMax };
+
+
+	unsigned char corners[2][2][3];
+	for (int w = 0; w < 2; w++)
+	{
+		for (int h = 0; h < 2; h++)
+		{
+			int xPos = i + w;
+			int yPos = j + h;
+			if (bufferFilled[yPos*(buffer_width + 1) + xPos])
+			{
+				unsigned char* pixel = cornerBuffer + (yPos * (buffer_width + 1) + xPos) * 3;
+				corners[w][h][0] = pixel[0];
+				corners[w][h][1] = pixel[1];
+				corners[w][h][2] = pixel[2];
+
+			}
+			else
+			{
+				col = trace(scene, xVals[w], yVals[h]);
+				unsigned char *pixel = cornerBuffer + (xPos + yPos * buffer_width+1) * 3;
+
+				pixel[0] = (int)(255.0 * col[0]);
+				pixel[1] = (int)(255.0 * col[1]);
+				pixel[2] = (int)(255.0 * col[2]);
+
+				corners[w][h][0] = pixel[0];
+				corners[w][h][1] = pixel[1];
+				corners[w][h][2] = pixel[2];
+				
+				bufferFilled[yPos*(buffer_width + 1) + xPos] = true;
+			}			
+		}
+	}
+	
+	unsigned char avg[3];
+	unsigned char *pixel = buffer + (i + j * buffer_width) * 3;
+	if (checkDiff(corners, 2, avg))
+	{
+		pixel[0] = avg[0];
+		pixel[1] = avg[1];
+		pixel[2] = avg[2];
+	}
+	else
+	{
+		vec3f subCol[4];
+		vec3f colSum = vec3f(0,0,0);
+		double subx[4];
+		double suby[4];
+
+		double halfWidth = pixWidth / 2.0;
+		double halfHeight = pixHeight / 2.0;
+
+		subx[0] = xMin;
+		suby[0] = yMin;
+		subx[1] = xMin + halfWidth;
+		suby[1] = yMin;
+		subx[2] = xMin;
+		suby[2] = yMin + halfHeight;
+		subx[3] = xMin + halfWidth;
+		suby[3] = yMin + halfHeight;
+
+		for (int i = 0; i < 4; i++)
+		{
+			colSum += qSubPix(subx[i], suby[i], halfWidth, halfHeight, 1);
+		}
+		colSum /= 4.0;
+		
+		pixel[0] = (int)(255.0 * colSum[0]);
+		pixel[1] = (int)(255.0 * colSum[1]);
+		pixel[2] = (int)(255.0 * colSum[2]);
+	}
+
+	
+}
+
+vec3f RayTracer::qSubPix( double xMin, double yMin, double width, double height, int depth)
+{
+	double xMax = xMin + width;
+	double yMax = yMin + height;
+	double xVals[2] = { xMin, xMax };
+	double yVals[2] = { yMin, yMax };
+
+	vec3f corners[2][2];
+	vec3f cornerSum = vec3f(0, 0, 0);
+	for (int w = 0; w < 2; w++)
+	{
+		for (int h = 0; h < 2; h++)
+		{
+			corners[w][h] = trace(scene, xVals[w], yVals[h]);
+			cornerSum += corners[w][h];
+		}
+	}
+
+	vec3f cornerAvg = cornerSum / 4.0;
+
+	double diffSum = 0;
+	for (int w = 0; w < 2; w++)
+	{
+		for (int h = 0; h < 2; h++)
+		{
+			double length = (corners[w][h] - cornerAvg).length;
+			diffSum += length;
+		}
+	}
+
+	if (diffSum < ADPTHREDOUBLE || depth > SUBDEPTH)
+	{
+		return cornerAvg;
+	}
+
+	else
+	{
+		double halfWidth = width / 2.0;
+		double halfHeight = height / 2.0;
+
+		
+
+
+		double x[4] = { xMin, xMin + halfWidth, xMin, xMin + halfWidth };
+		double y[4] = { yMin, yMin, halfHeight, yMin + halfHeight };
+
+		vec3f cornerSubSum = vec3f(0.0,0.0,0.0);
+
+		for (int i = 0; i < 4; i++)
+		{
+			cornerSubSum += qSubPix(x[i], y[i], halfWidth, halfHeight, depth + 1);
+		}
+
+		return cornerSubSum / 4.0;
+	}
+}
+
+unsigned char maxChar(unsigned char a, unsigned char b)
+{
+	return a > b ? a : b;
+}
+
+unsigned char minChar(unsigned char a, unsigned char b)
+{
+	return a < b ? a : b;
+}
+
+bool checkDiff(unsigned char corners[][2][3], int size, unsigned char* avgOut)
+{
+	unsigned int sum[3] = {0,0,0};
+	for (int i = 0; i < size; i++)
+	{
+		for (int j = 0; j < 2; j++)
+		{
+			sum[0] += corners[i][j][0];
+			sum[1] += corners[i][j][1];
+			sum[2] += corners[i][j][2];
+		}
+	}
+	unsigned int avg[3];
+	for (int i = 0; i < 3; i++)
+	{
+		avg[i] = sum[i] / 4;
+		avgOut[i] = avg[i];
+	}
+
+	int diff[3];
+	for (int i = 0; i < size; i++)
+	{
+		for (int j = 0; j < 2; j++)
+		{
+			diff[0] += abs(int(corners[i][j][0])-int(avg[0]));
+			diff[1] += abs(int(corners[i][j][1]) - int(avg[1]));
+			diff[2] += abs(int(corners[i][j][2]) - int(avg[2]));
+		}
+	}
+	int diffFinal = diff[0] + diff[1] + diff[2];
+	if (diffFinal < ADPTHRE)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+
+}
+
+void RayTracer::tracePixelSample(int i, int j)
+{
+	vec3f col;
+
+	if (!scene)
+		return;
+
+	double x = double(i) / double(buffer_width);
+	double y = double(j) / double(buffer_height);
+
+	col = trace(scene, x, y);
+
+	unsigned char *pixel = buffer + (i + j * buffer_width) * 3;
+
+	pixel[0] = (int)(255.0 * col[0]);
+	pixel[1] = (int)(255.0 * col[1]);
+	pixel[2] = (int)(255.0 * col[2]);
 }
 
 void RayTracer::tracePixel( int i, int j )

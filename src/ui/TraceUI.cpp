@@ -113,6 +113,12 @@ void TraceUI::cb_threSlides(Fl_Widget* o, void* v)
 	((TraceUI*)(o->user_data()))->updateThre();
 }
 
+void TraceUI::cb_antiSlides(Fl_Widget* o, void* v)
+{
+	((TraceUI*)(o->user_data()))->m_nAntidepth = int(((Fl_Slider *)o)->value());
+	((TraceUI*)(o->user_data()))->updateAnti();
+}
+
 
 
 void TraceUI::cb_render(Fl_Widget* o, void* v)
@@ -165,8 +171,20 @@ void TraceUI::cb_render(Fl_Widget* o, void* v)
 					}
 				}
 
-				pUI->raytracer->tracePixel( x, y );
-		
+				switch (((TraceUI*)(o->user_data()))->m_nRaytracingMethod)
+				{
+				case NORMAL:
+					pUI->raytracer->tracePixel(x, y);
+					break;
+				case SAMPLE:
+					pUI->raytracer->tracePixelSample(x, y);
+					break;
+				case ADAPT:
+					pUI->raytracer->tracePixelAdapt(x, y);
+					break;
+				default:
+					cout << "Choice Error, the choice box has invalid value for tracing method!" << endl;
+				}
 			}
 			if (done) break;
 
@@ -190,6 +208,11 @@ void TraceUI::cb_render(Fl_Widget* o, void* v)
 		// Restore the window label
 		pUI->m_traceGlWindow->label(old_label);		
 	}
+}
+
+void TraceUI::cb_RaytraceMethodChoice(Fl_Widget* o, void* v)
+{
+	
 }
 
 void TraceUI::cb_stop(Fl_Widget* o, void* v)
@@ -221,12 +244,19 @@ double TraceUI::getThre()
 {
 	return m_nThreshold;
 }
+int TraceUI::getAnti()
+{
+	return m_nAntidepth;
+}
 
 void TraceUI::updateDepth(){
 	raytracer->setDepth(getDepth());
 }
 void TraceUI::updateThre(){
 	raytracer->setThre(getThre());
+}
+void TraceUI::updateAnti(){
+	raytracer->setAnti(getAnti());
 }
 
 // menu definition
@@ -252,6 +282,8 @@ TraceUI::TraceUI() {
 	m_nSize = 150;
 	m_nThreshold = 1.0;
 	m_nspotEnabled = false;
+	m_nAntidepth = 1;
+	m_nRaytracingMethod = NORMAL;
 	m_mainWindow = new Fl_Window(100, 40, 320, 300, "Ray <Not Loaded>");
 		m_mainWindow->user_data((void*)(this));	// record self to be used by static callback functions
 		// install menu bar
@@ -304,6 +336,18 @@ TraceUI::TraceUI() {
 		m_threSlider->value(m_nThreshold);
 		m_threSlider->align(FL_ALIGN_RIGHT);
 		m_threSlider->callback(cb_threSlides);
+
+		m_antiSlider = new Fl_Value_Slider(10, 105, 170, 20, "Antialiasing depth");
+		m_antiSlider->user_data((void*)(this));	// record self to be used by static callback functions
+		m_antiSlider->type(FL_HOR_NICE_SLIDER);
+		m_antiSlider->labelfont(FL_COURIER);
+		m_antiSlider->labelsize(12);
+		m_antiSlider->minimum(1);
+		m_antiSlider->maximum(5);
+		m_antiSlider->step(1);
+		m_antiSlider->value(m_nAntidepth);
+		m_antiSlider->align(FL_ALIGN_RIGHT);
+		m_antiSlider->callback(cb_antiSlides);
 
 		m_mainWindow->callback(cb_exit2);
 		m_mainWindow->when(FL_HIDE);

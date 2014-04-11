@@ -18,6 +18,13 @@
 
 #include "TraceGLWindow.h"
 
+enum
+{
+	NORMAL = 0,
+	SAMPLE = 1,
+	ADAPT = 2
+};
+
 class TraceUI {
 public:
 	TraceUI();
@@ -31,6 +38,8 @@ public:
 
 	//Used to control the adption threshold
 	Fl_Slider*			m_threSlider;
+	//Used to control the depth of adaption antialiasing
+	Fl_Slider*			m_antiSlider;
 
 	Fl_Button*			m_renderButton;
 	Fl_Button*			m_stopButton;
@@ -47,20 +56,25 @@ public:
 	int			getSize();
 	int			getDepth();
 	double		getThre();
+	int			getAnti();
 
 private:
 	RayTracer*	raytracer;
 
 	int			m_nSize;
 	int			m_nDepth;
+	int			m_nRaytracingMethod;
 
 	double		m_nThreshold;
 
 	bool		m_nspotEnabled;
 
+	//Contorl the anti alasing depth
+	int			m_nAntidepth;
+
 	void updateDepth();
 	void updateThre();
-
+	void updateAnti();
 // static class members
 	static Fl_Menu_Item menuitems[];
 
@@ -79,11 +93,14 @@ private:
 	static void cb_depthSlides(Fl_Widget* o, void* v);
 
 	static void cb_threSlides(Fl_Widget* o, void* v);
+	static void cb_antiSlides(Fl_Widget* o, void* v);
 
 	
 
 	static void cb_render(Fl_Widget* o, void* v);
 	static void cb_stop(Fl_Widget* o, void* v);
+
+	static void cb_RaytraceMethodChoice(Fl_Widget* o, void* v);
 };
 
 #endif
