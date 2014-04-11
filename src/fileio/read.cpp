@@ -256,7 +256,7 @@ static CSGTree processCSGGeometry(string name, Obj *child, Scene *scene,
 	if (name == "translate") {
 		const tuple& tup = child->getTuple();
 		verifyTuple(tup, 4);
-		processCSGGeometry(tup[3],
+		return processCSGGeometry(tup[3],
 			scene,
 			materials,
 			transform->createChild(mat4f::translate(vec3f(tup[0]->getScalar(),
@@ -266,7 +266,7 @@ static CSGTree processCSGGeometry(string name, Obj *child, Scene *scene,
 	else if (name == "rotate") {
 		const tuple& tup = child->getTuple();
 		verifyTuple(tup, 5);
-		processCSGGeometry(tup[4],
+		return processCSGGeometry(tup[4],
 			scene,
 			materials,
 			transform->createChild(mat4f::rotate(vec3f(tup[0]->getScalar(),
@@ -278,14 +278,14 @@ static CSGTree processCSGGeometry(string name, Obj *child, Scene *scene,
 		const tuple& tup = child->getTuple();
 		if (tup.size() == 2) {
 			double sc = tup[0]->getScalar();
-			processCSGGeometry(tup[1],
+			return processCSGGeometry(tup[1],
 				scene,
 				materials,
 				transform->createChild(mat4f::scale(vec3f(sc, sc, sc))));
 		}
 		else {
 			verifyTuple(tup, 4);
-			processCSGGeometry(tup[3],
+			return processCSGGeometry(tup[3],
 				scene,
 				materials,
 				transform->createChild(mat4f::scale(vec3f(tup[0]->getScalar(),
@@ -306,7 +306,7 @@ static CSGTree processCSGGeometry(string name, Obj *child, Scene *scene,
 		verifyTuple(l3, 4);
 		verifyTuple(l4, 4);
 
-		processCSGGeometry(tup[4],
+		return processCSGGeometry(tup[4],
 			scene,
 			materials,
 			transform->createChild(mat4f(vec4f(l1[0]->getScalar(),
@@ -353,6 +353,7 @@ static CSGTree processCSGGeometry(string name, Obj *child, Scene *scene,
 			maybeExtractField(child, "bottom_radius", bottom_radius);
 			maybeExtractField(child, "top_radius", top_radius);
 			maybeExtractField(child, "capped", capped);
+			if (!capped)
 
 			obj = new Cone(scene, mat, height, bottom_radius, top_radius, capped);
 		}
@@ -376,8 +377,12 @@ static CSGTree processCSGGeometry(string name, Obj *child, Scene *scene,
 			scene->addCSGNode(ia.getRoot());
 			return ia;
 		}
+		else {
+			throw ParseError(string("invalid primitive for CSG"));
+		}
 
 		obj->setTransform(transform);
+		obj->ComputeBoundingBox();
 
 		CSGNode *nd = new CSGNode;
 		nd->isLeaf = true;
@@ -385,6 +390,7 @@ static CSGTree processCSGGeometry(string name, Obj *child, Scene *scene,
 		CSGTree ret(nd);
 		scene->addCSGObject(obj);
 		scene->addCSGNode(nd);
+		nd->computerBoundingBox();
 		return ret;
 	}
 }

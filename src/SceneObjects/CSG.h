@@ -9,19 +9,28 @@ enum TYPE_RELATION{
 	MINUS
 };
 
-struct SegmentPoint{
+class SegmentPoint{
+public:
 	double t;
 	vec3f normal;
 	bool isRight;//0-left 1-right
 	int contri;//contribution 1:union/intersect -1:minus
+	bool operator<(const SegmentPoint& other){
+		return t < other.t - RAY_EPSILON;
+	}
 };
 
 class Segments{
 private:
 	vector<SegmentPoint> points;
 public:
+	Segments() :
+		points(){}
 	Segments& Merge(const Segments& another, int relation);
-	SegmentPoint firstPositive();
+	bool firstPositive(SegmentPoint& pt);
+	void addPoint(SegmentPoint& pt){
+		points.push_back(pt);
+	}
 };
 
 class CSGNode
@@ -34,6 +43,11 @@ public:
 	Geometry* item;
 	TYPE_RELATION relation;
 	bool isLeaf;//isLeaf=false => item=NULL
+	Segments intersectLocal(const ray& r) const;
+	BoundingBox getBoundingBox() const;
+	void computerBoundingBox();
+private:
+	BoundingBox bound;
 };
 
 class CSGTree{
@@ -42,12 +56,14 @@ public:
 	CSGTree(CSGNode* ptr){
 		root = ptr;
 	}
+	CSGTree(const CSGTree& other){
+		root = other.root;
+	}
 	CSGTree& Merge(const CSGTree& pB, TYPE_RELATION relation);
 	bool intersect(const ray& r, isect& i) const;
 	CSGNode* getRoot(){ return root; }
 private:
 	CSGNode* root;
-	Segments intersectLocal(const ray& r) const;
 };
 
 class CSG
